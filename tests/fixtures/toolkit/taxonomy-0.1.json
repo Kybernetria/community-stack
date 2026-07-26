@@ -1,0 +1,637 @@
+{
+  "version": "0.1",
+  "title": "Toolkit selection controlled vocabulary",
+  "concepts": [
+    {
+      "key": "domain.creative-media",
+      "name": "Creative media",
+      "kind": "domain",
+      "definition": "Creation or production of audio, video, images, or other media.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.communication-collaboration",
+      "name": "Communication and collaboration",
+      "kind": "domain",
+      "definition": "Interpersonal communication or coordinated group work.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.knowledge-productivity",
+      "name": "Knowledge and productivity",
+      "kind": "domain",
+      "definition": "Knowledge capture, organization, and personal or team productivity.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.software-development",
+      "name": "Software development",
+      "kind": "domain",
+      "definition": "Design, implementation, testing, or maintenance of software.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.data-analytics",
+      "name": "Data and analytics",
+      "kind": "domain",
+      "definition": "Data processing, analysis, or visualization.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.networking-distributed-systems",
+      "name": "Networking and distributed systems",
+      "kind": "domain",
+      "definition": "Network communication or coordination among distributed nodes.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.security-privacy",
+      "name": "Security and privacy",
+      "kind": "domain",
+      "definition": "Protection of systems, communications, identities, or data.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.storage-sync-backup",
+      "name": "Storage, sync, and backup",
+      "kind": "domain",
+      "definition": "Durable storage, replication, synchronization, or backup.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.infrastructure-operations",
+      "name": "Infrastructure and operations",
+      "kind": "domain",
+      "definition": "Deployment, operation, or observation of computing infrastructure.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.web-content-publishing",
+      "name": "Web content and publishing",
+      "kind": "domain",
+      "definition": "Creation, management, or publication of web content.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "domain.science-engineering",
+      "name": "Science and engineering",
+      "kind": "domain",
+      "definition": "Scientific research, simulation, measurement, or engineering work.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.audio-workstation",
+      "name": "Audio workstation",
+      "kind": "role",
+      "definition": "A tool for recording, editing, arranging, or mixing multitrack audio.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.creative-media"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.audio-plugin-host",
+      "name": "Audio plug-in host",
+      "kind": "role",
+      "definition": "A tool capable of loading audio plug-ins for processing or instruments.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.creative-media"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.messenger",
+      "name": "Messenger",
+      "kind": "role",
+      "definition": "A tool whose primary role is person-to-person or group messaging.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.communication-collaboration"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.file-sync",
+      "name": "File synchronization tool",
+      "kind": "role",
+      "definition": "A tool that synchronizes files across locations or devices.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.storage-sync-backup"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.networking-protocol",
+      "name": "Networking protocol or stack",
+      "kind": "role",
+      "definition": "A protocol or implementation stack for networked communication.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.networking-distributed-systems"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.collaboration-framework",
+      "name": "Distributed collaboration framework",
+      "kind": "role",
+      "definition": "A developer framework for collaborative or replicated applications.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.software-development",
+        "domain.networking-distributed-systems"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.database",
+      "name": "Database",
+      "kind": "role",
+      "definition": "A system whose primary role is storing and querying structured data.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.software-development",
+        "domain.data-analytics"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.developer-framework",
+      "name": "Developer framework",
+      "kind": "role",
+      "definition": "A reusable framework for building software.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.software-development"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.self-hosted-application",
+      "name": "Self-hosted application",
+      "kind": "role",
+      "definition": "An end-user application intended to run on user-controlled infrastructure.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.infrastructure-operations"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "role.knowledge-application",
+      "name": "Knowledge application",
+      "kind": "role",
+      "definition": "An end-user tool for capturing or organizing knowledge.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "domain.knowledge-productivity"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "cap.security.end-to-end-encryption",
+      "name": "End-to-end encryption",
+      "kind": "capability",
+      "definition": "Provides documented content encryption in which service intermediaries cannot access plaintext within the stated threat model.",
+      "aliases": [
+        "E2EE"
+      ],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "role.messenger",
+        "role.file-sync",
+        "role.knowledge-application"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "cap.sync.peer-to-peer",
+      "name": "Peer-to-peer synchronization or exchange",
+      "kind": "capability",
+      "definition": "Synchronizes or exchanges application data directly among peer nodes rather than requiring one canonical data server.",
+      "aliases": [
+        "P2P sync"
+      ],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "role.file-sync",
+        "role.networking-protocol",
+        "role.collaboration-framework"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "cap.network.transport-pluggability",
+      "name": "Pluggable transports",
+      "kind": "capability",
+      "definition": "Allows an operator or integrator to select or add transport implementations through a documented interface.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "role.networking-protocol",
+        "role.collaboration-framework"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "cap.application.self-hostable",
+      "name": "Self-hostable",
+      "kind": "capability",
+      "definition": "Can be deployed and operated on infrastructure controlled by the user or organization.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "attr.license.open-source",
+      "name": "Open-source status",
+      "kind": "attribute",
+      "definition": "Source is available under a license meeting an explicitly stated open-source criterion; fixture uses OSI-approved or equivalent project-stated licensing.",
+      "aliases": [
+        "FOSS"
+      ],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "attr.platform.linux",
+      "name": "Linux support",
+      "kind": "attribute",
+      "definition": "Provides a documented supported Linux runtime or desktop build.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "attr.sync.transport",
+      "name": "Transport used",
+      "kind": "attribute",
+      "definition": "A named transport or bearer used by the tool in the described configuration.",
+      "aliases": [],
+      "value_type": "enum",
+      "cardinality": "many",
+      "applicable_categories": [
+        "role.networking-protocol",
+        "role.collaboration-framework",
+        "role.file-sync"
+      ],
+      "allowed_values": [
+        "iroh",
+        "tcp",
+        "udp",
+        "ble",
+        "lora",
+        "serial",
+        "other"
+      ],
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "attr.deployment.primary-mode",
+      "name": "Primary deployment mode",
+      "kind": "attribute",
+      "definition": "The primary documented operating arrangement for the tool.",
+      "aliases": [],
+      "value_type": "enum",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": [
+        "desktop",
+        "mobile",
+        "server",
+        "library",
+        "hybrid"
+      ],
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "standard.audio-plugin.vst3.host-support",
+      "name": "VST3 host support",
+      "kind": "standard",
+      "definition": "Degree to which an audio plug-in host can load and operate VST3 plug-ins.",
+      "aliases": [
+        "VST3 hosting"
+      ],
+      "value_type": "enum",
+      "cardinality": "one",
+      "applicable_categories": [
+        "role.audio-workstation",
+        "role.audio-plugin-host"
+      ],
+      "allowed_values": [
+        "none",
+        "partial",
+        "full"
+      ],
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "standard.audio-plugin.lv2.host-support",
+      "name": "LV2 host support",
+      "kind": "standard",
+      "definition": "Degree to which an audio plug-in host can load and operate LV2 plug-ins.",
+      "aliases": [
+        "LV2 hosting"
+      ],
+      "value_type": "enum",
+      "cardinality": "one",
+      "applicable_categories": [
+        "role.audio-workstation",
+        "role.audio-plugin-host"
+      ],
+      "allowed_values": [
+        "none",
+        "partial",
+        "full"
+      ],
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "standard.web.webdav.support",
+      "name": "WebDAV support",
+      "kind": "standard",
+      "definition": "Interoperates with WebDAV for remote file or content access.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [
+        "role.file-sync",
+        "role.knowledge-application",
+        "role.self-hosted-application"
+      ],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "dimension.sync.transport-agnosticism",
+      "name": "Transport agnosticism",
+      "kind": "dimension",
+      "definition": "Rubric-based magnitude of how independently the system model and APIs operate from any one network transport.",
+      "aliases": [
+        "sync agnosticism"
+      ],
+      "value_type": "integer",
+      "cardinality": "one",
+      "applicable_categories": [
+        "role.networking-protocol",
+        "role.collaboration-framework",
+        "role.file-sync"
+      ],
+      "allowed_values": null,
+      "scale": {
+        "min": 0,
+        "max": 10,
+        "rubric": "transport-agnosticism",
+        "version": "1",
+        "anchors": {
+          "0": "Hard-wired to one transport with transport assumptions in the data model.",
+          "5": "Some transport substitution is possible but core workflows or identity retain transport coupling.",
+          "8": "Multiple materially different transports are documented behind stable abstractions.",
+          "10": "Transport-independent model with demonstrated third-party transport extension and no privileged bearer."
+        }
+      },
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "dimension.sync.decentralization",
+      "name": "Synchronization decentralization",
+      "kind": "dimension",
+      "definition": "Rubric-based magnitude of independence from a mandatory coordinating service for normal synchronization.",
+      "aliases": [],
+      "value_type": "integer",
+      "cardinality": "one",
+      "applicable_categories": [
+        "role.networking-protocol",
+        "role.collaboration-framework",
+        "role.file-sync"
+      ],
+      "allowed_values": null,
+      "scale": {
+        "min": 0,
+        "max": 10,
+        "rubric": "sync-decentralization",
+        "version": "1",
+        "anchors": {
+          "0": "A vendor-controlled central service is mandatory.",
+          "5": "Self-hosting or federation is possible but coordination remains server-centric.",
+          "8": "Normal operation can proceed directly among peers without a mandatory shared service.",
+          "10": "No privileged coordinator is required for discovery, authorization, or data exchange."
+        }
+      },
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "descriptor.local-first",
+      "name": "Local-first",
+      "kind": "descriptor",
+      "definition": "Informal discovery label indicating that local operation and local data ownership are emphasized.",
+      "aliases": [
+        "offline-first"
+      ],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    },
+    {
+      "key": "descriptor.modular",
+      "name": "Modular",
+      "kind": "descriptor",
+      "definition": "Informal discovery label indicating an architecture designed around replaceable components.",
+      "aliases": [],
+      "value_type": "boolean",
+      "cardinality": "one",
+      "applicable_categories": [],
+      "allowed_values": null,
+      "scale": null,
+      "parent": null,
+      "status": "active"
+    }
+  ],
+  "unresolved": [
+    {
+      "term": "open source versus source available",
+      "note": "The fixture uses project licensing evidence, but organizational policy should define the acceptance criterion before hard selection."
+    },
+    {
+      "term": "full plug-in hosting",
+      "note": "Full currently means project-documented hosting, not conformance testing across every extension."
+    },
+    {
+      "term": "transport agnosticism versus transport pluggability",
+      "note": "Pluggability is a deterministic advertised capability; agnosticism is a rubric assessment of coupling magnitude."
+    }
+  ]
+}

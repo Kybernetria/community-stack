@@ -1,0 +1,1 @@
+{"event_id":"standup","project_id":"release","title":"Stand-up","description":null,"status":"active","timing":{"kind":"utc","start_at_ms":10000,"end_at_ms":11800,"time_zone":"Europe/Berlin"},"recurrence":{"frequency":"weekly","interval":1,"count":8,"until_ms":null,"by_weekday":["monday"]},"location":"Room 4"}

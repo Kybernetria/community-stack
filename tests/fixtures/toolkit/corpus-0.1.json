@@ -1,0 +1,986 @@
+{
+  "version": "0.1",
+  "fixture_notice": "Curated research fixtures, not authoritative product certifications. Verified means reviewed against the cited source for this spike. Re-check before selection.",
+  "tools": [
+    {
+      "key": "ardour",
+      "name": "Ardour",
+      "description": "Digital audio workstation.",
+      "homepage": "https://ardour.org/",
+      "status": "active"
+    },
+    {
+      "key": "bitwig-studio",
+      "name": "Bitwig Studio",
+      "description": "Commercial digital audio workstation.",
+      "homepage": "https://www.bitwig.com/",
+      "status": "active"
+    },
+    {
+      "key": "carla",
+      "name": "Carla",
+      "description": "Audio plug-in host.",
+      "homepage": "https://kx.studio/Applications:Carla",
+      "status": "active"
+    },
+    {
+      "key": "signal",
+      "name": "Signal",
+      "description": "Private messenger.",
+      "homepage": "https://signal.org/",
+      "status": "active"
+    },
+    {
+      "key": "syncthing",
+      "name": "Syncthing",
+      "description": "Continuous file synchronization tool.",
+      "homepage": "https://syncthing.net/",
+      "status": "active"
+    },
+    {
+      "key": "p2panda",
+      "name": "p2panda",
+      "description": "Framework for building local-first applications.",
+      "homepage": "https://p2panda.org/",
+      "status": "active"
+    },
+    {
+      "key": "reticulum",
+      "name": "Reticulum",
+      "description": "Cryptography-based networking stack.",
+      "homepage": "https://reticulum.network/",
+      "status": "active"
+    },
+    {
+      "key": "postgresql",
+      "name": "PostgreSQL",
+      "description": "Relational database.",
+      "homepage": "https://www.postgresql.org/",
+      "status": "active"
+    },
+    {
+      "key": "django",
+      "name": "Django",
+      "description": "Python web framework.",
+      "homepage": "https://www.djangoproject.com/",
+      "status": "active"
+    },
+    {
+      "key": "nextcloud",
+      "name": "Nextcloud",
+      "description": "Self-hosted content collaboration application.",
+      "homepage": "https://nextcloud.com/",
+      "status": "active"
+    },
+    {
+      "key": "joplin",
+      "name": "Joplin",
+      "description": "Note-taking and knowledge application.",
+      "homepage": "https://joplinapp.org/",
+      "status": "active"
+    },
+    {
+      "key": "sqlite",
+      "name": "SQLite",
+      "description": "Embedded SQL database engine.",
+      "homepage": "https://sqlite.org/",
+      "status": "active"
+    }
+  ],
+  "assertions": [
+    {
+      "tool": "ardour",
+      "concept": "domain.creative-media",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "bitwig-studio",
+      "concept": "domain.creative-media",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "carla",
+      "concept": "domain.creative-media",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "signal",
+      "concept": "domain.communication-collaboration",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "signal",
+      "concept": "domain.security-privacy",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "syncthing",
+      "concept": "domain.storage-sync-backup",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "syncthing",
+      "concept": "domain.networking-distributed-systems",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "p2panda",
+      "concept": "domain.software-development",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "p2panda",
+      "concept": "domain.networking-distributed-systems",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "reticulum",
+      "concept": "domain.networking-distributed-systems",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "reticulum",
+      "concept": "domain.security-privacy",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "postgresql",
+      "concept": "domain.software-development",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "postgresql",
+      "concept": "domain.data-analytics",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "django",
+      "concept": "domain.software-development",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "django",
+      "concept": "domain.web-content-publishing",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "domain.infrastructure-operations",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "domain.storage-sync-backup",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "domain.communication-collaboration",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "joplin",
+      "concept": "domain.knowledge-productivity",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "sqlite",
+      "concept": "domain.software-development",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "sqlite",
+      "concept": "domain.data-analytics",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "ardour",
+      "concept": "role.audio-workstation",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "ardour",
+      "concept": "role.audio-plugin-host",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "bitwig-studio",
+      "concept": "role.audio-workstation",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "bitwig-studio",
+      "concept": "role.audio-plugin-host",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "carla",
+      "concept": "role.audio-plugin-host",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "signal",
+      "concept": "role.messenger",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "syncthing",
+      "concept": "role.file-sync",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "p2panda",
+      "concept": "role.collaboration-framework",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "reticulum",
+      "concept": "role.networking-protocol",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "postgresql",
+      "concept": "role.database",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "django",
+      "concept": "role.developer-framework",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "role.self-hosted-application",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "role.file-sync",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "joplin",
+      "concept": "role.knowledge-application",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "sqlite",
+      "concept": "role.database",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "fixture://curated-corpus",
+      "evidence": "Fixture role classification; review before production use.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "ardour",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://ardour.org/copying.html",
+      "evidence": "Ardour publishes its source under GPLv2.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "ardour",
+      "concept": "attr.platform.linux",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://ardour.org/download.html",
+      "evidence": "Official download page lists Linux builds.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "ardour",
+      "concept": "standard.audio-plugin.lv2.host-support",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://manual.ardour.org/working-with-plugins/",
+      "evidence": "Manual documents LV2 plug-in discovery and use; fixture maps documented hosting to full.",
+      "as_of": "2026-07-26",
+      "value": "full"
+    },
+    {
+      "tool": "ardour",
+      "concept": "standard.audio-plugin.vst3.host-support",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://manual.ardour.org/working-with-plugins/",
+      "evidence": "Manual documents VST3 plug-in discovery and use; fixture maps documented hosting to full.",
+      "as_of": "2026-07-26",
+      "value": "full"
+    },
+    {
+      "tool": "ardour",
+      "concept": "attr.deployment.primary-mode",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://ardour.org/",
+      "evidence": "Presented as a desktop digital audio workstation.",
+      "as_of": "2026-07-26",
+      "value": "desktop"
+    },
+    {
+      "tool": "bitwig-studio",
+      "concept": "attr.platform.linux",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://www.bitwig.com/support/technical_support/system-requirements-1/",
+      "evidence": "Official requirements include Linux.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "bitwig-studio",
+      "concept": "standard.audio-plugin.vst3.host-support",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://www.bitwig.com/userguide/latest/working_with_audio_events/",
+      "evidence": "Official documentation identifies VST3 plug-in support; fixture maps documented hosting to full.",
+      "as_of": "2026-07-26",
+      "value": "full"
+    },
+    {
+      "tool": "bitwig-studio",
+      "concept": "standard.audio-plugin.lv2.host-support",
+      "origin": "fixture",
+      "verification_state": "unknown",
+      "source": "fixture://curated-corpus",
+      "evidence": "No fixture assertion was normalized from current evidence; unknown is not false.",
+      "as_of": "2026-07-26"
+    },
+    {
+      "tool": "bitwig-studio",
+      "concept": "attr.deployment.primary-mode",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://www.bitwig.com/",
+      "evidence": "Presented as desktop music software.",
+      "as_of": "2026-07-26",
+      "value": "desktop"
+    },
+    {
+      "tool": "carla",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/falkTX/Carla",
+      "evidence": "Repository publishes GPL-2.0 license metadata.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "carla",
+      "concept": "attr.platform.linux",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://kx.studio/Applications:Carla",
+      "evidence": "Project page documents Linux availability.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "carla",
+      "concept": "standard.audio-plugin.lv2.host-support",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://kx.studio/Applications:Carla",
+      "evidence": "Project feature list includes LV2 hosting; fixture maps documented hosting to full.",
+      "as_of": "2026-07-26",
+      "value": "full"
+    },
+    {
+      "tool": "carla",
+      "concept": "standard.audio-plugin.vst3.host-support",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://kx.studio/Applications:Carla",
+      "evidence": "Project feature list includes VST3 hosting; fixture maps documented hosting to full.",
+      "as_of": "2026-07-26",
+      "value": "full"
+    },
+    {
+      "tool": "signal",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/signalapp",
+      "evidence": "Signal publishes client and server source repositories.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "signal",
+      "concept": "cap.security.end-to-end-encryption",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://signal.org/docs/",
+      "evidence": "Signal documentation describes end-to-end encrypted messaging.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "signal",
+      "concept": "attr.deployment.primary-mode",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://signal.org/download/",
+      "evidence": "Official downloads include mobile and desktop clients used with a service.",
+      "as_of": "2026-07-26",
+      "value": "hybrid"
+    },
+    {
+      "tool": "syncthing",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/syncthing/syncthing",
+      "evidence": "Repository is licensed MPL-2.0.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "syncthing",
+      "concept": "attr.platform.linux",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://syncthing.net/downloads/",
+      "evidence": "Official downloads include Linux.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "syncthing",
+      "concept": "cap.sync.peer-to-peer",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://docs.syncthing.net/intro/getting-started.html",
+      "evidence": "Documentation describes exchanging data between devices without a central server.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "syncthing",
+      "concept": "attr.sync.transport",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://docs.syncthing.net/users/firewall.html",
+      "evidence": "Firewall documentation describes TCP listening and synchronization traffic.",
+      "as_of": "2026-07-26",
+      "value": "tcp"
+    },
+    {
+      "tool": "syncthing",
+      "concept": "dimension.sync.decentralization",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://docs.syncthing.net/intro/getting-started.html",
+      "evidence": "No central data server is required, while discovery and relaying can be shared services.",
+      "as_of": "2026-07-26",
+      "value": 8,
+      "rubric": "sync-decentralization",
+      "rubric_version": "1",
+      "rationale": "Direct device synchronization supports anchor 8; optional discovery/relay infrastructure keeps the fixture below 10.",
+      "evaluator_type": "human",
+      "evaluation_date": "2026-07-26"
+    },
+    {
+      "tool": "p2panda",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/p2panda/p2panda",
+      "evidence": "Repository publishes an MIT OR Apache-2.0 license.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "p2panda",
+      "concept": "cap.sync.peer-to-peer",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://p2panda.org/",
+      "evidence": "Project describes peer-to-peer local-first application infrastructure.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "p2panda",
+      "concept": "attr.sync.transport",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/p2panda/p2panda",
+      "evidence": "Current project documentation and source integrate Iroh networking.",
+      "as_of": "2026-07-26",
+      "value": "iroh"
+    },
+    {
+      "tool": "p2panda",
+      "concept": "dimension.sync.transport-agnosticism",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/p2panda/p2panda",
+      "evidence": "The data model is separable from networking, but the current implementation integrates Iroh as its transport.",
+      "as_of": "2026-07-26",
+      "value": 6,
+      "rubric": "transport-agnosticism",
+      "rubric_version": "1",
+      "rationale": "Model/transport separation exceeds anchor 5, but no fixture evidence demonstrates multiple materially different transports behind a stable extension API.",
+      "evaluator_type": "human",
+      "evaluation_date": "2026-07-26"
+    },
+    {
+      "tool": "p2panda",
+      "concept": "dimension.sync.decentralization",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://p2panda.org/",
+      "evidence": "Project is designed for peer-to-peer applications without a canonical application server.",
+      "as_of": "2026-07-26",
+      "value": 8,
+      "rubric": "sync-decentralization",
+      "rubric_version": "1",
+      "rationale": "Peer operation meets anchor 8; discovery and networking dependencies are not assessed as fully coordinator-free.",
+      "evaluator_type": "human",
+      "evaluation_date": "2026-07-26"
+    },
+    {
+      "tool": "reticulum",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/markqvist/Reticulum",
+      "evidence": "Repository publishes the Reticulum License, based on GPLv3; policy interpretation remains fixture-scoped.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "reticulum",
+      "concept": "cap.network.transport-pluggability",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://reticulum.network/manual/interfaces.html",
+      "evidence": "Manual documents multiple configurable interface types.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "reticulum",
+      "concept": "attr.sync.transport",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://reticulum.network/manual/interfaces.html",
+      "evidence": "Manual documents an interface corresponding to TCP.",
+      "as_of": "2026-07-26",
+      "value": "tcp"
+    },
+    {
+      "tool": "reticulum",
+      "concept": "attr.sync.transport",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://reticulum.network/manual/interfaces.html",
+      "evidence": "Manual documents an interface corresponding to UDP.",
+      "as_of": "2026-07-26",
+      "value": "udp"
+    },
+    {
+      "tool": "reticulum",
+      "concept": "attr.sync.transport",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://reticulum.network/manual/interfaces.html",
+      "evidence": "Manual documents an interface corresponding to BLE.",
+      "as_of": "2026-07-26",
+      "value": "ble"
+    },
+    {
+      "tool": "reticulum",
+      "concept": "attr.sync.transport",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://reticulum.network/manual/interfaces.html",
+      "evidence": "Manual documents an interface corresponding to LORA.",
+      "as_of": "2026-07-26",
+      "value": "lora"
+    },
+    {
+      "tool": "reticulum",
+      "concept": "attr.sync.transport",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://reticulum.network/manual/interfaces.html",
+      "evidence": "Manual documents an interface corresponding to SERIAL.",
+      "as_of": "2026-07-26",
+      "value": "serial"
+    },
+    {
+      "tool": "reticulum",
+      "concept": "dimension.sync.transport-agnosticism",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://reticulum.network/manual/interfaces.html",
+      "evidence": "Manual documents operation across materially different packet-radio, serial, and IP interfaces.",
+      "as_of": "2026-07-26",
+      "value": 9,
+      "rubric": "transport-agnosticism",
+      "rubric_version": "1",
+      "rationale": "Breadth of documented interfaces exceeds anchor 8; fixture lacks evidence for the third-party-extension and no-privileged-bearer claims required for 10.",
+      "evaluator_type": "human",
+      "evaluation_date": "2026-07-26"
+    },
+    {
+      "tool": "reticulum",
+      "concept": "dimension.sync.decentralization",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://reticulum.network/manual/whatis.html",
+      "evidence": "Architecture is designed without mandatory central control.",
+      "as_of": "2026-07-26",
+      "value": 9,
+      "rubric": "sync-decentralization",
+      "rubric_version": "1",
+      "rationale": "No central coordinator is required for normal packet exchange; fixture leaves discovery and authorization details short of anchor 10.",
+      "evaluator_type": "human",
+      "evaluation_date": "2026-07-26"
+    },
+    {
+      "tool": "postgresql",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://www.postgresql.org/about/licence/",
+      "evidence": "PostgreSQL License permits use, copy, modification, and distribution.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "postgresql",
+      "concept": "attr.platform.linux",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://www.postgresql.org/download/linux/",
+      "evidence": "Official site provides Linux packages.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "postgresql",
+      "concept": "attr.deployment.primary-mode",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://www.postgresql.org/about/",
+      "evidence": "PostgreSQL is presented as an object-relational database server.",
+      "as_of": "2026-07-26",
+      "value": "server"
+    },
+    {
+      "tool": "django",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://www.djangoproject.com/foundation/faq/",
+      "evidence": "Django documentation identifies its BSD license.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "django",
+      "concept": "cap.application.self-hostable",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://docs.djangoproject.com/en/stable/howto/deployment/",
+      "evidence": "Official documentation covers deployment by application operators.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "django",
+      "concept": "attr.deployment.primary-mode",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://www.djangoproject.com/",
+      "evidence": "Django is presented as a web framework.",
+      "as_of": "2026-07-26",
+      "value": "library"
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/nextcloud/server",
+      "evidence": "Server repository publishes AGPL-3.0 license metadata.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "cap.application.self-hostable",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://docs.nextcloud.com/server/latest/admin_manual/installation/",
+      "evidence": "Administration manual documents self-hosted installation.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "standard.web.webdav.support",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://docs.nextcloud.com/server/latest/user_manual/en/files/access_webdav.html",
+      "evidence": "User manual documents WebDAV access.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "cap.security.end-to-end-encryption",
+      "origin": "ai",
+      "verification_state": "proposed",
+      "source": "https://docs.nextcloud.com/server/latest/admin_manual/configuration_files/encryption_configuration.html",
+      "evidence": "AI-proposed normalization from Nextcloud encryption documentation; human review required.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "nextcloud",
+      "concept": "attr.deployment.primary-mode",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://docs.nextcloud.com/server/latest/admin_manual/installation/",
+      "evidence": "Primary fixture mode is a self-operated server application.",
+      "as_of": "2026-07-26",
+      "value": "server"
+    },
+    {
+      "tool": "joplin",
+      "concept": "attr.license.open-source",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://github.com/laurent22/joplin",
+      "evidence": "Repository publishes AGPL-3.0 license metadata.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "joplin",
+      "concept": "attr.platform.linux",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://joplinapp.org/help/install/",
+      "evidence": "Official installation help lists Linux.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "joplin",
+      "concept": "cap.security.end-to-end-encryption",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://joplinapp.org/help/apps/sync/e2ee/",
+      "evidence": "Official help documents end-to-end encryption for synchronized notes.",
+      "as_of": "2026-07-26",
+      "value": true
+    },
+    {
+      "tool": "joplin",
+      "concept": "attr.deployment.primary-mode",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://joplinapp.org/help/install/",
+      "evidence": "Fixture selects the desktop client as primary mode.",
+      "as_of": "2026-07-26",
+      "value": "desktop"
+    },
+    {
+      "tool": "sqlite",
+      "concept": "attr.deployment.primary-mode",
+      "origin": "fixture",
+      "verification_state": "verified",
+      "source": "https://sqlite.org/about.html",
+      "evidence": "SQLite is an in-process library implementing a database engine.",
+      "as_of": "2026-07-26",
+      "value": "library"
+    }
+  ]
+}

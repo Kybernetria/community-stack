@@ -1,0 +1,3 @@
+# Reticulum is deliberately isolated from the Rust process. Update only after interop tests.
+rns==1.4.1 \
+    --hash=sha256:d92f827cb77df8eda2824153a4d1288e8e2ea588382166f4ca45427288d0ee6b

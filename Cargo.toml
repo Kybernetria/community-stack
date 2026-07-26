@@ -1,0 +1,57 @@
+[package]
+name = "community-stack"
+version = "0.1.0"
+edition = "2024"
+license = "AGPL-3.0-or-later"
+description = "Device-local replicated backend plumbing for p2panda, Loro, SQLite, and Reticulum"
+
+[dependencies]
+anyhow = "=1.0.104"
+async-trait = "=0.1.91"
+base64 = "=0.22.1"
+blake3 = "=1.8.5"
+chacha20poly1305 = "=0.10.1"
+ciborium = "=0.2.2"
+clap = { version = "=4.5.60", features = ["derive"] }
+getrandom = "=0.3.4"
+# Required by p2panda-sync's mpsc Sink usage; upstream 0.7.0 omits this feature.
+futures-channel = { version = "=0.3.33", features = ["sink"] }
+hex = "=0.4.3"
+loro = "=1.13.7"
+p2panda-core = "=0.7.0"
+p2panda-sync = "=0.7.0"
+rusqlite = { version = "=0.40.1", features = ["backup", "bundled", "modern_sqlite"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.149"
+thiserror = "=2.0.18"
+tokio = { version = "=1.53.1", features = ["io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tracing = "=0.1.44"
+tracing-subscriber = { version = "=0.3.22", features = ["env-filter", "fmt"] }
+zstd = "=0.13.3"
+
+[dev-dependencies]
+tempfile = "=3.24.0"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Public API docs live in protocol/ and docs/ while interfaces are still pre-1.0.
+missing_errors_doc = "allow"
+must_use_candidate = "allow"
+similar_names = "allow"
+needless_pass_by_value = "allow"
+
+# p2panda-sync 0.7.0 requests p2panda-store defaults, which otherwise pulls a
+# second SQLx/libsqlite3 authority incompatible with rusqlite 0.40.1. This
+# audited one-line vendor patch disables only that concrete SQLite default;
+# p2panda store traits remain available to our rusqlite adapter.
+[patch.crates-io]
+p2panda-store = { path = "vendor/p2panda-store" }

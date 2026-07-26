@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "rubrics": [
+    {
+      "key": "transport-agnosticism",
+      "version": "1",
+      "dimension": "dimension.sync.transport-agnosticism",
+      "question": "How independently can the system model and operate from any one transport?",
+      "anchors": {
+        "0": "Hard-wired to one transport with transport assumptions in the data model.",
+        "5": "Some transport substitution is possible but core workflows or identity retain transport coupling.",
+        "8": "Multiple materially different transports are documented behind stable abstractions.",
+        "10": "Transport-independent model with demonstrated third-party transport extension and no privileged bearer."
+      },
+      "scoring": "Use integer scores. Interpolate only when rationale identifies evidence between anchors. Absence of evidence is unknown, never zero."
+    },
+    {
+      "key": "sync-decentralization",
+      "version": "1",
+      "dimension": "dimension.sync.decentralization",
+      "question": "How independent is normal synchronization from a mandatory coordinating service?",
+      "anchors": {
+        "0": "A vendor-controlled central service is mandatory.",
+        "5": "Self-hosting or federation is possible but coordination remains server-centric.",
+        "8": "Normal operation can proceed directly among peers without a mandatory shared service.",
+        "10": "No privileged coordinator is required for discovery, authorization, or data exchange."
+      },
+      "scoring": "Score the documented configuration, state scope in rationale, and leave unknown when evidence is inadequate."
+    }
+  ]
+}

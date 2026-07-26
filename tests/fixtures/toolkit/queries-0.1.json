@@ -1,0 +1,170 @@
+{
+  "version": "0.1",
+  "queries": [
+    {
+      "id": "q01-audio-lv2-linux",
+      "text": "Audio workstation with full LV2 hosting and Linux support.",
+      "plan": {"requirements": [
+        {"concept": "role.audio-workstation", "op": "eq", "value": true},
+        {"concept": "standard.audio-plugin.lv2.host-support", "op": "eq", "value": "full"},
+        {"concept": "attr.platform.linux", "op": "eq", "value": true}
+      ]},
+      "expected_exact": ["ardour"]
+    },
+    {
+      "id": "q02-audio-vst3-linux",
+      "text": "Linux audio workstation with full VST3 hosting.",
+      "plan": {"requirements": [
+        {"concept": "role.audio-workstation", "op": "eq", "value": true},
+        {"concept": "standard.audio-plugin.vst3.host-support", "op": "eq", "value": "full"},
+        {"concept": "attr.platform.linux", "op": "eq", "value": true}
+      ]},
+      "expected_exact": ["ardour", "bitwig-studio"]
+    },
+    {
+      "id": "q03-category-scope",
+      "text": "Audio workstation with VST3; a plug-in host that is not a workstation must not match.",
+      "plan": {"requirements": [
+        {"concept": "role.audio-workstation", "op": "eq", "value": true},
+        {"concept": "standard.audio-plugin.vst3.host-support", "op": "eq", "value": "full"}
+      ]},
+      "expected_exact": ["ardour", "bitwig-studio"]
+    },
+    {
+      "id": "q04-e2ee-messenger",
+      "text": "Open-source messenger with verified E2EE.",
+      "plan": {"requirements": [
+        {"concept": "role.messenger", "op": "eq", "value": true},
+        {"concept": "attr.license.open-source", "op": "eq", "value": true},
+        {"concept": "cap.security.end-to-end-encryption", "op": "eq", "value": true}
+      ]},
+      "expected_exact": ["signal"]
+    },
+    {
+      "id": "q05-cross-category-e2ee",
+      "text": "Any represented open-source tool with verified E2EE, regardless of category.",
+      "plan": {"requirements": [
+        {"concept": "attr.license.open-source", "op": "eq", "value": true},
+        {"concept": "cap.security.end-to-end-encryption", "op": "eq", "value": true}
+      ]},
+      "expected_exact": ["joplin", "signal"]
+    },
+    {
+      "id": "q06-p2p-transport-eight",
+      "text": "P2P system with transport agnosticism of at least 8.",
+      "plan": {"requirements": [
+        {"concept": "cap.sync.peer-to-peer", "op": "eq", "value": true},
+        {"concept": "dimension.sync.transport-agnosticism", "op": "gte", "value": 8}
+      ]},
+      "expected_exact": []
+    },
+    {
+      "id": "q07-network-transport-eight",
+      "text": "Networking stack with transport agnosticism of at least 8.",
+      "plan": {"requirements": [
+        {"concept": "role.networking-protocol", "op": "eq", "value": true},
+        {"concept": "dimension.sync.transport-agnosticism", "op": "gte", "value": 8}
+      ]},
+      "expected_exact": ["reticulum"]
+    },
+    {
+      "id": "q08-no-exact-score-ten",
+      "text": "System with a transport agnosticism score of 10.",
+      "plan": {"requirements": [
+        {"concept": "dimension.sync.transport-agnosticism", "op": "gte", "value": 10}
+      ]},
+      "expected_exact": []
+    },
+    {
+      "id": "q09-p2panda-score-range",
+      "text": "p2panda with transport agnosticism between 5 and 7.",
+      "plan": {"tools": ["p2panda"], "requirements": [
+        {"concept": "dimension.sync.transport-agnosticism", "op": "gte", "value": 5},
+        {"concept": "dimension.sync.transport-agnosticism", "op": "lte", "value": 7}
+      ]},
+      "expected_exact": ["p2panda"]
+    },
+    {
+      "id": "q10-compare-p2panda-reticulum",
+      "text": "Compare p2panda and Reticulum on sync-related dimensions.",
+      "plan": {"tools": ["p2panda", "reticulum"], "requirements": [
+        {"concept": "dimension.sync.transport-agnosticism", "op": "exists"},
+        {"concept": "dimension.sync.decentralization", "op": "exists"}
+      ]},
+      "expected_exact": ["p2panda", "reticulum"]
+    },
+    {
+      "id": "q11-explicit-unknown",
+      "text": "Does Bitwig have full LV2 hosting? Fixture answer is unknown, not false.",
+      "plan": {"tools": ["bitwig-studio"], "requirements": [
+        {"concept": "standard.audio-plugin.lv2.host-support", "op": "eq", "value": "full"}
+      ]},
+      "expected_exact": [],
+      "expected_state": "unknown"
+    },
+    {
+      "id": "q12-missing",
+      "text": "Does SQLite have a documented Linux support assertion in this fixture?",
+      "plan": {"tools": ["sqlite"], "requirements": [
+        {"concept": "attr.platform.linux", "op": "eq", "value": true}
+      ]},
+      "expected_exact": [],
+      "expected_state": "missing"
+    },
+    {
+      "id": "q13-unverified-does-not-satisfy",
+      "text": "Nextcloud with verified E2EE; its AI proposal must not satisfy this requirement.",
+      "plan": {"tools": ["nextcloud"], "requirements": [
+        {"concept": "cap.security.end-to-end-encryption", "op": "eq", "value": true}
+      ]},
+      "expected_exact": [],
+      "expected_state": "unknown"
+    },
+    {
+      "id": "q14-file-sync-p2p",
+      "text": "Open-source peer-to-peer file synchronization tool.",
+      "plan": {"requirements": [
+        {"concept": "role.file-sync", "op": "eq", "value": true},
+        {"concept": "cap.sync.peer-to-peer", "op": "eq", "value": true},
+        {"concept": "attr.license.open-source", "op": "eq", "value": true}
+      ]},
+      "expected_exact": ["syncthing"]
+    },
+    {
+      "id": "q15-self-hosted-webdav",
+      "text": "Self-hosted application with WebDAV.",
+      "plan": {"requirements": [
+        {"concept": "role.self-hosted-application", "op": "eq", "value": true},
+        {"concept": "standard.web.webdav.support", "op": "eq", "value": true}
+      ]},
+      "expected_exact": ["nextcloud"]
+    },
+    {
+      "id": "q16-open-source-database-server",
+      "text": "Open-source database whose primary mode is server.",
+      "plan": {"requirements": [
+        {"concept": "role.database", "op": "eq", "value": true},
+        {"concept": "attr.license.open-source", "op": "eq", "value": true},
+        {"concept": "attr.deployment.primary-mode", "op": "eq", "value": "server"}
+      ]},
+      "expected_exact": ["postgresql"]
+    },
+    {
+      "id": "q17-transport-in-set",
+      "text": "Networking protocol represented with a radio or serial transport.",
+      "plan": {"requirements": [
+        {"concept": "role.networking-protocol", "op": "eq", "value": true},
+        {"concept": "attr.sync.transport", "op": "in", "value": ["ble", "lora", "serial"]}
+      ]},
+      "expected_exact": ["reticulum"]
+    },
+    {
+      "id": "q18-irrelevant-fields-no-ranking",
+      "text": "Peer-to-peer capability across two named tools; unrelated fixture field counts must not affect ordering or match strength.",
+      "plan": {"tools": ["syncthing", "p2panda"], "requirements": [
+        {"concept": "cap.sync.peer-to-peer", "op": "eq", "value": true}
+      ]},
+      "expected_exact": ["p2panda", "syncthing"]
+    }
+  ]
+}

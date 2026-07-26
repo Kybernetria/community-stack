@@ -1,0 +1,1 @@
+{"dependency_id":"design-before-build","predecessor_task_id":"design","successor_task_id":"build","kind":"finish_to_start","lag_ms":0}

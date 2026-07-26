@@ -1,0 +1,39 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-07-25
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: scripts/check-boundaries.sh
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked --all-targets
+      - run: test -z "$(cargo tree -i sqlx 2>/dev/null)"
+      - run: test "$(cargo tree -i libsqlite3-sys | grep -c '^libsqlite3-sys ')" -eq 1
+
+  clients:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: python -m py_compile $(find clients examples rns-bridge -name '*.py' -type f -print)
+      - run: node --check examples/fact-console/app.js
+      - run: python -m pip download --require-hashes --no-deps -r rns-bridge/requirements.txt -d /tmp/wheels

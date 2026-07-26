@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Community Stack Fact Console</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">COMMUNITY STACK</p>
+      <h1>Fact Console</h1>
+      <p class="subtle">Signed claims and provenance—not a declaration of resolved truth.</p>
+    </div>
+    <div id="health" class="status pending">Connecting…</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Assert a claim revision</h2>
+      <p class="subtle">A claim may be superseded, disputed, expired, or retracted. Resolution across competing claims is future GroupPolicy work.</p>
+      <form id="assert-form">
+        <div class="grid">
+          <label>Community<input name="community_id" value="library" required></label>
+          <label>Claim ID<input name="claim_id" required></label>
+          <label>Subject<input name="subject" value="book:123" required></label>
+          <label>Predicate<input name="predicate" value="org.example.library/located_at@1" required></label>
+          <label>Schema ID<input name="schema_id" value="org.example.library/located_at" required></label>
+          <label>Schema version<input name="schema_version" type="number" min="1" value="1" required></label>
+          <label class="wide">Object JSON<textarea name="object" required>{"shelf":"A4"}</textarea></label>
+          <label>Semantic source<input name="source" value="manual-console"></label>
+          <label>Source document<input name="source_document_id" value="console/session"></label>
+          <label>Confidence<input name="confidence" type="number" min="0" max="1" step="0.01" value="1"></label>
+          <label>Lifecycle<select name="lifecycle_status"><option>ASSERTED</option><option>RETRACTED</option><option>DISPUTED</option><option>EXPIRED</option></select></label>
+          <label class="wide">Idempotency key<input name="idempotency_key" required></label>
+        </div>
+        <div class="actions">
+          <button type="submit">Commit signed revision</button>
+          <button type="button" class="secondary" id="retry" disabled>Retry exact write</button>
+          <button type="button" class="secondary" id="new-write">Start new write</button>
+        </div>
+      </form>
+      <pre id="write-result" aria-live="polite">No write yet.</pre>
+    </section>
+
+    <section>
+      <h2>Query current claim projection</h2>
+      <p class="subtle">These are current active claims for efficient retrieval, not resolved truth.</p>
+      <form id="query-form" class="query-grid">
+        <label>Community<input name="community_id" value="library" required></label>
+        <label>Subject filter<input name="subject" placeholder="optional"></label>
+        <label>Predicate filter<input name="predicate" placeholder="optional"></label>
+        <button type="submit">Query projection</button>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Claim</th><th>Subject</th><th>Predicate</th><th>Object</th><th>Revision</th><th></th></tr></thead>
+          <tbody id="facts"><tr><td colspan="6" class="empty">Run a query.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Claim inspection</h2>
+      <p class="subtle">Links the current projection to its revision, signed operation, schema, provenance, lifecycle, and owning Loro document.</p>
+      <pre id="inspection-result">No claim selected.</pre>
+      <h3>Bounded revision history</h3>
+      <pre id="history-result">No claim selected.</pre>
+    </section>
+
+    <section>
+      <h2>Local administration</h2>
+      <p class="subtle">Available only when the gateway was given a separate ADMIN capability. The browser receives neither APP nor ADMIN token.</p>
+      <form id="schema-form">
+        <div class="grid">
+          <label>App namespace<input name="app_id" value="org.example.library" required></label>
+          <label>Schema ID<input name="schema_id" value="org.example.library/located_at" required></label>
+          <label>Version<input name="schema_version" type="number" min="1" value="1" required></label>
+          <label>Predicate<input name="predicate" value="org.example.library/located_at@1" required></label>
+          <label>Provenance<select name="provenance_policy"><option>NONE</option><option>SOURCE</option><option>SOURCE_DOCUMENT</option><option selected>SOURCE_AND_DOCUMENT</option></select></label>
+          <label>Multiple active claims<input name="multiple_active_claims" type="checkbox"></label>
+          <label class="wide">Bounded object schema<textarea name="object_schema" required>{"type":"object","properties":{"shelf":{"type":"string","maxLength":32}},"required":["shelf"],"additionalProperties":false}</textarea></label>
+        </div>
+        <div class="actions">
+          <button type="submit">Register schema</button>
+          <button type="button" class="secondary" id="schema-list">List schemas</button>
+          <button type="button" class="secondary" id="doctor">Run read-only doctor</button>
+        </div>
+      </form>
+      <pre id="admin-result">No administrative check run.</pre>
+    </section>
+  </main>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

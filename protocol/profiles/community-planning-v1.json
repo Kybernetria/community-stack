@@ -1,0 +1,45 @@
+{
+  "data_namespace": "community.planning",
+  "dependency_kinds": ["finish_to_start", "start_to_start", "finish_to_finish", "start_to_finish"],
+  "extension_policy": "closed-v1-records; namespaced extensions require a later profile version",
+  "limits": {
+    "catalog_rows_per_record_type": 10000,
+    "description_bytes": 8192,
+    "location_bytes": 1024,
+    "record_bytes": 65536,
+    "title_bytes": 512
+  },
+  "profile_id": "community.planning",
+  "profile_version": 1,
+  "record_types": ["dependency", "event", "project", "task"],
+  "records": {
+    "dependency": {
+      "fields": ["dependency_id", "predecessor_task_id", "successor_task_id", "kind", "lag_ms"],
+      "rules": "task references must exist; self-links and directed cycles are forbidden; absolute lag is at most 31536000000 milliseconds"
+    },
+    "event": {
+      "fields": ["event_id", "project_id", "title", "description", "status", "timing", "recurrence", "location"],
+      "rules": "project_id is optional but must reference an existing project; timing and recurrence follow this manifest"
+    },
+    "project": {
+      "fields": ["project_id", "title", "description", "status"],
+      "rules": "description is optional"
+    },
+    "task": {
+      "fields": ["task_id", "project_id", "title", "description", "status", "start_at_ms", "due_at_ms", "progress_percent"],
+      "rules": "project_id is optional but must reference an existing project; due must not precede start; progress is 0 through 100"
+    }
+  },
+  "recurrence": {
+    "by_weekday": "weekly-only, unique, at most seven; empty means the start weekday",
+    "frequency": ["daily", "weekly", "monthly", "yearly"],
+    "interval": "1 through 365",
+    "termination": "exactly one of count 1 through 10000 or timed until_ms within ten years",
+    "instances": "derived views, never authoritative rows"
+  },
+  "statuses": ["planned", "active", "completed", "cancelled", "archived"],
+  "temporal_policy": {
+    "all_day": "ISO-8601 YYYY-MM-DD start and exclusive end; recurrence uses count",
+    "timed": "UTC epoch milliseconds; end follows start; recurrence uses UTC arithmetic; time_zone is presentation metadata"
+  }
+}
