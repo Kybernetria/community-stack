@@ -1,11 +1,18 @@
 use std::{
     io::ErrorKind,
-    os::unix::fs::{FileTypeExt, PermissionsExt},
-    path::Path,
+    os::unix::net::UnixListener as StdUnixListener,
+    os::{fd::AsRawFd, unix::fs::PermissionsExt},
+    path::{Path, PathBuf},
     sync::Arc,
 };
 
 use anyhow::{Context, Result, bail};
+#[cfg(target_os = "linux")]
+use rustix::fs::{ResolveFlags, openat2};
+use rustix::{
+    fs::{FileType, Mode, OFlags, fstat, statat, unlinkat},
+    process::geteuid,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::{
@@ -85,10 +92,8 @@ impl ApiResponse {
 }
 
 pub async fn serve(socket_path: &Path, core: CommunityCore) -> Result<()> {
-    prepare_socket(socket_path)?;
-    let listener = UnixListener::bind(socket_path)
-        .with_context(|| format!("binding local API at {}", socket_path.display()))?;
-    std::fs::set_permissions(socket_path, std::fs::Permissions::from_mode(0o600))?;
+    let binding = prepare_socket(socket_path)?;
+    let listener = binding.bind()?;
     info!(path = %socket_path.display(), "local API ready");
     let connections = Arc::new(Semaphore::new(128));
 
@@ -117,19 +122,116 @@ pub async fn serve(socket_path: &Path, core: CommunityCore) -> Result<()> {
         }
     }
     drop(listener);
-    let _ = std::fs::remove_file(socket_path);
+    binding.remove_socket()?;
     Ok(())
 }
 
-fn prepare_socket(path: &Path) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
+#[derive(Debug)]
+struct SecureSocketBinding {
+    parent: rustix::fd::OwnedFd,
+    name: String,
+    bind_path: PathBuf,
+}
+
+impl SecureSocketBinding {
+    fn bind(&self) -> Result<UnixListener> {
+        // Unix pathname sockets have no bindat(2). openat2 fixes and validates
+        // every existing intermediate component before this bind; the final
+        // parent is private and owned by the service user, so an unprivileged
+        // peer cannot replace it between these operations.
+        let listener = StdUnixListener::bind(&self.bind_path)
+            .with_context(|| format!("binding local API socket entry {}", self.name))?;
+        listener.set_nonblocking(true)?;
+        std::fs::set_permissions(&self.bind_path, std::fs::Permissions::from_mode(0o600))?;
+        Ok(UnixListener::from_std(listener)?)
     }
-    match std::fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_socket() => std::fs::remove_file(path)?,
-        Ok(_) => bail!("refusing to replace non-socket path {}", path.display()),
-        Err(error) if error.kind() == ErrorKind::NotFound => {}
+
+    fn remove_socket(&self) -> Result<()> {
+        match unlinkat(&self.parent, &self.name, rustix::fs::AtFlags::empty()) {
+            Ok(()) => Ok(()),
+            Err(error) if error == rustix::io::Errno::NOENT => Ok(()),
+            Err(error) => Err(error.into()),
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn prepare_socket(path: &Path) -> Result<SecureSocketBinding> {
+    let name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .filter(|value| !value.is_empty() && *value != "." && *value != "..")
+        .context("socket path must have a UTF-8 final component")?;
+    if name.contains('/') {
+        bail!("socket path final component must not contain a separator");
+    }
+    let parent = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let parent_fd = openat2(
+        rustix::fs::CWD,
+        parent,
+        OFlags::PATH | OFlags::DIRECTORY | OFlags::CLOEXEC,
+        Mode::empty(),
+        ResolveFlags::NO_SYMLINKS,
+    )
+    .with_context(|| format!("securely opening socket parent {}", parent.display()))?;
+    validate_socket_parent(&parent_fd, parent)?;
+
+    match statat(&parent_fd, name, rustix::fs::AtFlags::SYMLINK_NOFOLLOW) {
+        Ok(metadata) if FileType::from_raw_mode(metadata.st_mode).is_socket() => {
+            unlinkat(&parent_fd, name, rustix::fs::AtFlags::empty())?;
+        }
+        Ok(metadata) => {
+            bail!(
+                "refusing to replace non-socket path {} ({} is present)",
+                path.display(),
+                match FileType::from_raw_mode(metadata.st_mode) {
+                    FileType::Symlink => "symlink",
+                    _ => "another filesystem object",
+                }
+            );
+        }
+        Err(error) if error == rustix::io::Errno::NOENT => {}
         Err(error) => return Err(error.into()),
+    }
+
+    if path.as_os_str().len() > 107 {
+        bail!("socket path is too long for Unix pathname binding");
+    }
+    let bind_path = PathBuf::from(format!("/proc/self/fd/{}/{}", parent_fd.as_raw_fd(), name));
+    Ok(SecureSocketBinding {
+        parent: parent_fd,
+        name: name.to_owned(),
+        bind_path,
+    })
+}
+
+#[cfg(not(target_os = "linux"))]
+fn prepare_socket(_path: &Path) -> Result<SecureSocketBinding> {
+    bail!("secure socket binding is unavailable on this platform")
+}
+
+fn validate_socket_parent(parent: &rustix::fd::OwnedFd, display_path: &Path) -> Result<()> {
+    let metadata = fstat(parent)?;
+    if !FileType::from_raw_mode(metadata.st_mode).is_dir() {
+        bail!(
+            "socket parent {} must be a directory",
+            display_path.display()
+        );
+    }
+    if metadata.st_uid != geteuid().as_raw() {
+        bail!(
+            "socket parent {} is not owned by the effective user",
+            display_path.display()
+        );
+    }
+    if metadata.st_mode & 0o077 != 0 || metadata.st_mode & 0o700 != 0o700 {
+        bail!(
+            "socket parent {} must be private (mode 0700)",
+            display_path.display()
+        );
     }
     Ok(())
 }
@@ -242,5 +344,67 @@ fn classify_error(message: &str) -> (&'static str, bool) {
         ("METHOD_NOT_FOUND", false)
     } else {
         ("INVALID_REQUEST", false)
+    }
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use std::os::unix::fs::PermissionsExt;
+
+    use tempfile::TempDir;
+
+    use super::{SecureSocketBinding, prepare_socket};
+
+    #[test]
+    fn rejects_non_private_socket_parent_before_bind() {
+        let temp = TempDir::new().unwrap();
+        std::fs::set_permissions(temp.path(), std::fs::Permissions::from_mode(0o755)).unwrap();
+        let error = prepare_socket(&temp.path().join("community.sock")).unwrap_err();
+        assert!(error.to_string().contains("private"));
+    }
+
+    #[test]
+    fn accepts_owned_private_socket_parent() {
+        let temp = TempDir::new().unwrap();
+        std::fs::set_permissions(temp.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        prepare_socket(&temp.path().join("community.sock")).unwrap();
+    }
+
+    #[test]
+    fn rejects_nested_socket_parent_symlink() {
+        let temp = TempDir::new().unwrap();
+        let target = temp.path().join("target");
+        std::fs::create_dir(&target).unwrap();
+        std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let nested = temp.path().join("nested");
+        std::os::unix::fs::symlink(&target, &nested).unwrap();
+        let error = prepare_socket(&nested.join("community.sock")).unwrap_err();
+        assert!(error.to_string().contains("securely opening socket parent"));
+    }
+
+    #[tokio::test]
+    async fn descriptor_bind_does_not_follow_replaced_parent() {
+        let temp = TempDir::new().unwrap();
+        let stable = temp.path().join("stable");
+        let redirect = temp.path().join("redirect");
+        let nested = temp.path().join("nested");
+        let moved = temp.path().join("moved");
+        let socket_name = "community.sock";
+        for path in [&stable, &redirect] {
+            std::fs::create_dir(path).unwrap();
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).unwrap();
+        }
+        std::fs::rename(&stable, &nested).unwrap();
+
+        let binding: SecureSocketBinding = prepare_socket(&nested.join(socket_name)).unwrap();
+        std::fs::rename(&nested, &moved).unwrap();
+        std::os::unix::fs::symlink(&redirect, &nested).unwrap();
+
+        let listener = binding.bind().unwrap();
+        assert!(moved.join(socket_name).exists());
+        assert!(!redirect.join(socket_name).exists());
+        drop(listener);
+        binding.remove_socket().unwrap();
+        assert!(!moved.join(socket_name).exists());
     }
 }

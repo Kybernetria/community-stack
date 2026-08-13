@@ -3,6 +3,8 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub const MAX_CATALOG_ROWS: usize = 10_000;
+
 fn default_limit() -> u16 {
     100
 }

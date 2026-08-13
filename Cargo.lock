@@ -370,6 +370,7 @@ dependencies = [
  "p2panda-core",
  "p2panda-sync",
  "rusqlite",
+ "rustix",
  "serde",
  "serde_json",
  "tempfile",

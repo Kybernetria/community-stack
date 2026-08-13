@@ -1,11 +1,11 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use rusqlite::{Connection, Transaction, params};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use crate::domain::{
-    ConceptDefinition, ToolkitAssertion, ToolkitCatalog, ToolkitConcept, ToolkitProjection,
-    ToolkitReview, ToolkitTool,
+    ConceptDefinition, MAX_CATALOG_ROWS, ToolkitAssertion, ToolkitCatalog, ToolkitConcept,
+    ToolkitProjection, ToolkitReview, ToolkitTool,
 };
 
 pub(super) fn apply_projection(
@@ -15,6 +15,14 @@ pub(super) fn apply_projection(
     operation_hash: &[u8; 32],
     projection: ToolkitProjection,
 ) -> Result<()> {
+    let total_rows: i64 = tx.query_row(
+        "SELECT (SELECT count(*) FROM toolkit_concepts WHERE app_id=?1 AND community_id=?2) +\n                (SELECT count(*) FROM toolkit_tools WHERE app_id=?1 AND community_id=?2) +\n                (SELECT count(*) FROM toolkit_assertions WHERE app_id=?1 AND community_id=?2) +\n                (SELECT count(*) FROM toolkit_reviews WHERE app_id=?1 AND community_id=?2)",
+        params![app_id, community_id],
+        |row| row.get(0),
+    )?;
+    if total_rows >= i64::try_from(MAX_CATALOG_ROWS)? {
+        bail!("toolkit catalog has reached the bounded append limit");
+    }
     match projection {
         ToolkitProjection::Concept(concept) => {
             tx.execute(
@@ -130,11 +138,62 @@ pub(super) fn catalog(
     app_id: &str,
     community_id: &str,
 ) -> Result<ToolkitCatalog> {
+    // Fetch only the supported maximum plus one sentinel row. The remaining
+    // budget is shared across record types so a large catalog cannot allocate
+    // one maximum-sized vector per table before the application rejects it.
+    let mut remaining = MAX_CATALOG_ROWS + 1;
+    let concepts = query_concepts(
+        connection,
+        app_id,
+        community_id,
+        Some(i64::try_from(remaining)?),
+        0,
+    )?;
+    remaining -= concepts.len();
+    if remaining == 0 {
+        bail!("toolkit catalog exceeds the bounded local query limit");
+    }
+
+    let tools = query_tools(
+        connection,
+        app_id,
+        community_id,
+        Some(i64::try_from(remaining)?),
+        0,
+    )?;
+    remaining -= tools.len();
+    if remaining == 0 {
+        bail!("toolkit catalog exceeds the bounded local query limit");
+    }
+
+    let assertions = query_assertions(
+        connection,
+        app_id,
+        community_id,
+        Some(i64::try_from(remaining)?),
+        0,
+    )?;
+    remaining -= assertions.len();
+    if remaining == 0 {
+        bail!("toolkit catalog exceeds the bounded local query limit");
+    }
+
+    let reviews = query_reviews(
+        connection,
+        app_id,
+        community_id,
+        Some(i64::try_from(remaining)?),
+        0,
+    )?;
+    if reviews.len() == remaining {
+        bail!("toolkit catalog exceeds the bounded local query limit");
+    }
+
     Ok(ToolkitCatalog {
-        concepts: query_concepts(connection, app_id, community_id, None, 0)?,
-        tools: query_tools(connection, app_id, community_id, None, 0)?,
-        assertions: query_assertions(connection, app_id, community_id, None, 0)?,
-        reviews: query_reviews(connection, app_id, community_id, None, 0)?,
+        concepts,
+        tools,
+        assertions,
+        reviews,
     })
 }
 

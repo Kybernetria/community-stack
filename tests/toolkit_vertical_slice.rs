@@ -12,7 +12,7 @@ use community_stack::{
     },
     application::CommunityCore,
     config,
-    domain::Principal,
+    domain::{MAX_CATALOG_ROWS, Principal},
 };
 use rusqlite::{Connection, OpenFlags};
 use serde_json::{Value, json};
@@ -108,6 +108,88 @@ fn assertion(
         "source": "https://example.test/source", "evidence": "Bounded test evidence.",
         "as_of": "2026-07-26"
     })
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn toolkit_catalog_materialization_is_bounded() {
+    let (temp, core, app, _, _, _) = setup("stress-app").await;
+    let db = config::database_path(temp.path());
+    add_concept(&core, &app, "stress", "seed", bool_concept("attr.seed")).await;
+    let connection = Connection::open(&db).unwrap();
+    let operation_hash: Vec<u8> = connection
+        .query_row("SELECT operation_hash FROM operations LIMIT 1", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+    let empty_json = serde_json::to_vec(&Vec::<String>::new()).unwrap();
+    for index in 0..MAX_CATALOG_ROWS {
+        connection
+            .execute(
+                "INSERT INTO toolkit_concepts(app_id,community_id,concept_key,revision_hash,name,kind,definition,aliases_json,value_type,cardinality,applicable_json,allowed_values_json,scale_json,parent_key,status,active_revision,source_operation_hash) VALUES(?1,'stress',?2,?3,?4,'attribute','stress',?5,'boolean','one',?5,NULL,NULL,NULL,'active',1,?6)",
+                rusqlite::params![
+                    app.id,
+                    format!("stress-{index}"),
+                    format!("{index:064x}"),
+                    format!("Stress {index}"),
+                    &empty_json,
+                    &operation_hash,
+                ],
+            )
+            .unwrap();
+    }
+    drop(connection);
+
+    let error = core
+        .call_authenticated(&app, "toolkit.query", json!({"community_id":"stress"}))
+        .await
+        .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("toolkit catalog exceeds the bounded local query limit")
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn toolkit_catalog_capacity_allows_idempotent_replay_but_rejects_append() {
+    let (temp, core, app, _, _, _) = setup("capacity-app").await;
+    let first = add_concept(&core, &app, "capacity", "seed", bool_concept("attr.seed")).await;
+    let db = config::database_path(temp.path());
+    let connection = Connection::open(&db).unwrap();
+    let operation_hash: Vec<u8> = connection
+        .query_row("SELECT operation_hash FROM operations LIMIT 1", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+    let empty_json = serde_json::to_vec(&Vec::<String>::new()).unwrap();
+    for index in 0..MAX_CATALOG_ROWS - 1 {
+        connection
+            .execute(
+                "INSERT INTO toolkit_concepts(app_id,community_id,concept_key,revision_hash,name,kind,definition,aliases_json,value_type,cardinality,applicable_json,allowed_values_json,scale_json,parent_key,status,active_revision,source_operation_hash) VALUES(?1,'capacity',?2,?3,?4,'attribute','capacity',?5,'boolean','one',?5,NULL,NULL,NULL,'active',1,?6)",
+                rusqlite::params![
+                    app.id,
+                    format!("capacity-{index}"),
+                    format!("{index:064x}"),
+                    format!("Capacity {index}"),
+                    &empty_json,
+                    &operation_hash,
+                ],
+            )
+            .unwrap();
+    }
+    drop(connection);
+
+    let replay = add_concept(&core, &app, "capacity", "seed", bool_concept("attr.seed")).await;
+    assert_eq!(replay, first);
+    let error = core
+        .call_authenticated(
+            &app,
+            "toolkit.tool.add",
+            json!({"community_id":"capacity","idempotency_key":"at-capacity","key":"new-tool","name":"new-tool"}),
+        )
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("bounded append limit"));
 }
 
 #[tokio::test(flavor = "multi_thread")]

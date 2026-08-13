@@ -21,6 +21,7 @@ loro = "=1.13.7"
 p2panda-core = "=0.7.0"
 p2panda-sync = "=0.7.0"
 rusqlite = { version = "=0.40.1", features = ["backup", "bundled", "modern_sqlite"] }
+rustix = { version = "=1.1.4", features = ["fs", "process"] }
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.149"
 thiserror = "=2.0.18"

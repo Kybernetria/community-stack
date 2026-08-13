@@ -7,8 +7,8 @@ use serde_json::{Value, json};
 use super::{CommunityCore, validate_idempotency_key, validate_object_id};
 use crate::domain::{
     AddConcept, AddTool, AssertToolkitValue, AssertionOrigin, Cardinality, ConceptDefinition,
-    ConceptKind, DocumentKey, ExplainToolkit, ExportToolkit, ListConcepts, Mutation,
-    PrimitiveValue, ProjectionWrite, QueryOperator, QueryToolkit, RequirementExplanation,
+    ConceptKind, DocumentKey, ExplainToolkit, ExportToolkit, ListConcepts, MAX_CATALOG_ROWS,
+    Mutation, PrimitiveValue, ProjectionWrite, QueryOperator, QueryToolkit, RequirementExplanation,
     RequirementState, ShowConcept, ToolkitAssertion, ToolkitCatalog, ToolkitConcept,
     ToolkitProjection, ToolkitQueryPlan, ToolkitQueryResponse, ToolkitQueryResult,
     ToolkitRequirement, ToolkitReview, ToolkitTool, ValueType, VerificationState,
@@ -16,7 +16,6 @@ use crate::domain::{
 };
 
 const TOOLKIT_SCHEMA_VERSION: u32 = 1;
-const MAX_CATALOG_ROWS: usize = 10_000;
 
 impl CommunityCore {
     pub(super) async fn toolkit_schema_list(
@@ -89,14 +88,6 @@ impl CommunityCore {
         };
         normalize_concept(&mut definition);
         validate_concept_shape(&definition)?;
-        let lock_key = toolkit_lock_key(app_id, &request.community_id);
-        let lock = self.document_lock(&lock_key).await;
-        let _guard = lock.lock().await;
-        let catalog = self
-            .repository
-            .toolkit_catalog(app_id, &request.community_id)
-            .await?;
-        validate_concept_references(&definition, &catalog)?;
         let canonical = serde_json::to_vec(&definition)?;
         let revision = hex::encode(self.hash_content(&canonical));
         if let Some(mut response) = self
@@ -107,6 +98,15 @@ impl CommunityCore {
             response["revision"] = json!(revision);
             return Ok(response);
         }
+        let lock_key = toolkit_lock_key(app_id, &request.community_id);
+        let lock = self.document_lock(&lock_key).await;
+        let _guard = lock.lock().await;
+        let catalog = self
+            .repository
+            .toolkit_catalog(app_id, &request.community_id)
+            .await?;
+        ensure_catalog_capacity(&catalog)?;
+        validate_concept_references(&definition, &catalog)?;
         if catalog
             .concepts
             .iter()
@@ -165,6 +165,7 @@ impl CommunityCore {
             .repository
             .toolkit_catalog(app_id, &request.community_id)
             .await?;
+        ensure_catalog_capacity(&catalog)?;
         if catalog.tools.iter().any(|tool| tool.key == request.key) {
             bail!("tool key already exists");
         }
@@ -216,6 +217,7 @@ impl CommunityCore {
             .repository
             .toolkit_catalog(app_id, &request.community_id)
             .await?;
+        ensure_catalog_capacity(&catalog)?;
         if catalog
             .assertions
             .iter()
@@ -323,6 +325,7 @@ impl CommunityCore {
             .repository
             .toolkit_catalog(app_id, &request.community_id)
             .await?;
+        ensure_catalog_capacity(&catalog)?;
         if catalog
             .reviews
             .iter()
@@ -438,6 +441,19 @@ impl CommunityCore {
             "import_supported": false
         }))
     }
+}
+
+fn ensure_catalog_capacity(catalog: &ToolkitCatalog) -> Result<()> {
+    let total = catalog
+        .concepts
+        .len()
+        .saturating_add(catalog.tools.len())
+        .saturating_add(catalog.assertions.len())
+        .saturating_add(catalog.reviews.len());
+    if total >= MAX_CATALOG_ROWS {
+        bail!("toolkit catalog has reached the bounded append limit");
+    }
+    Ok(())
 }
 
 fn toolkit_lock_key(app_id: &str, community_id: &str) -> DocumentKey {
@@ -1005,16 +1021,8 @@ fn validate_optional_text(value: Option<&str>, field: &str, max: usize) -> Resul
 }
 
 fn validate_date(value: &str, field: &str) -> Result<()> {
-    let bytes = value.as_bytes();
-    if bytes.len() != 10
-        || bytes[4] != b'-'
-        || bytes[7] != b'-'
-        || bytes
-            .iter()
-            .enumerate()
-            .any(|(index, byte)| index != 4 && index != 7 && !byte.is_ascii_digit())
-    {
-        bail!("{field} must use YYYY-MM-DD");
+    if !crate::domain::dates::is_valid_gregorian_date(value) {
+        bail!("{field} must use a valid Gregorian YYYY-MM-DD date");
     }
     Ok(())
 }
@@ -1079,6 +1087,13 @@ mod tests {
             ],
             reviews: vec![],
         }
+    }
+
+    #[test]
+    fn toolkit_dates_use_shared_gregorian_validation() {
+        assert!(validate_date("2024-02-29", "date").is_ok());
+        assert!(validate_date("2023-02-29", "date").is_err());
+        assert!(validate_date("2026-04-31", "date").is_err());
     }
 
     #[test]

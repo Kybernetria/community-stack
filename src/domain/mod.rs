@@ -3,6 +3,7 @@
 //! This module contains data only. It must not import infrastructure engines,
 //! runtimes, transports, or any adapter implementation.
 
+pub mod dates;
 pub mod documents;
 pub mod facts;
 pub mod planning;
