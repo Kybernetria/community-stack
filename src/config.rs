@@ -16,6 +16,11 @@ const MASTER_KEY_FILE: &str = "content-master.key";
 pub fn initialize_data_dir(data_dir: &Path) -> Result<()> {
     std::fs::create_dir_all(data_dir)?;
     std::fs::set_permissions(data_dir, std::fs::Permissions::from_mode(0o700))?;
+    if database_path(data_dir).exists() {
+        load_keys(data_dir).context(
+            "existing database requires its original device keys; restore a complete backup",
+        )?;
+    }
     ensure_secret(&data_dir.join(SIGNING_KEY_FILE), 32)?;
     ensure_secret(&data_dir.join(MASTER_KEY_FILE), 32)?;
     Ok(())
@@ -86,4 +91,27 @@ fn read_secret(path: &Path, expected_length: usize) -> Result<Vec<u8>> {
         bail!("secret path {} has invalid length", path.display());
     }
     Ok(bytes)
+}
+
+pub fn lock_data_dir(data_dir: &Path) -> Result<std::fs::File> {
+    std::fs::create_dir_all(data_dir)?;
+    if data_dir.join(crate::recovery::INCOMPLETE).exists() {
+        bail!("data directory recovery is incomplete");
+    }
+    let path = data_dir.join("core.lock");
+    if let Ok(metadata) = std::fs::symlink_metadata(&path)
+        && !metadata.file_type().is_file()
+    {
+        bail!("data directory lock must be a regular file");
+    }
+    let lock = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .mode(0o600)
+        .open(path)?;
+    lock.try_lock()
+        .context("data directory is already in use; stop its core before offline administration")?;
+    Ok(lock)
 }

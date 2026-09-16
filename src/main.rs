@@ -11,7 +11,7 @@ use community_stack::{
         sqlite::{self, StoreHandle},
     },
     application::CommunityCore,
-    config,
+    config, recovery,
 };
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -42,6 +42,25 @@ enum Command {
         id: String,
         #[arg(long, value_enum)]
         role: Role,
+    },
+    /// Create a complete device backup; destination must not exist.
+    Backup {
+        #[arg(long, default_value = "./data")]
+        data_dir: PathBuf,
+        #[arg(long)]
+        destination: PathBuf,
+    },
+    /// Verify a backup without modifying it.
+    VerifyBackup {
+        #[arg(long)]
+        source: PathBuf,
+    },
+    /// Recover the same device into a new directory.
+    Restore {
+        #[arg(long)]
+        source: PathBuf,
+        #[arg(long)]
+        data_dir: PathBuf,
     },
     /// Run the stable local Unix-socket entrypoint.
     Serve {
@@ -82,6 +101,7 @@ async fn main() -> Result<()> {
 
     match Cli::parse().command {
         Command::Init { data_dir } => {
+            let _ownership = config::lock_data_dir(&data_dir)?;
             config::initialize_data_dir(&data_dir)?;
             sqlite::initialize(&config::database_path(&data_dir))?;
             println!("initialized {}", data_dir.display());
@@ -91,6 +111,7 @@ async fn main() -> Result<()> {
             );
         }
         Command::Register { data_dir, id, role } => {
+            let _ownership = config::lock_data_dir(&data_dir)?;
             config::initialize_data_dir(&data_dir)?;
             let (token_hash, token) = config::generate_token()?;
             sqlite::register_application(
@@ -104,7 +125,26 @@ async fn main() -> Result<()> {
             println!("token={token}");
             eprintln!("Store this token securely; registering the same id again rotates it.");
         }
+        Command::Backup {
+            data_dir,
+            destination,
+        } => {
+            recovery::backup(&data_dir, &destination)?;
+            println!("backup verified: {}", destination.display());
+        }
+        Command::VerifyBackup { source } => {
+            recovery::verify(&source)?;
+            println!("backup verified: {}", source.display());
+        }
+        Command::Restore { source, data_dir } => {
+            recovery::restore(&source, &data_dir)?;
+            println!("device restored: {}", data_dir.display());
+            eprintln!(
+                "This preserves device identity. Stop the original before serving the restored copy."
+            );
+        }
         Command::Serve { data_dir, socket } => {
+            let _ownership = config::lock_data_dir(&data_dir)?;
             let (signing_key, master_key) = config::load_keys(&data_dir).with_context(|| {
                 format!("load keys from {}; run init first", data_dir.display())
             })?;

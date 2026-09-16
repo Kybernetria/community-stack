@@ -3,6 +3,7 @@
 //! This is the only layer allowed to coordinate documents, secure logs,
 //! persistence, projections, and outboxes. It depends exclusively on ports.
 
+mod documents;
 mod planning;
 mod toolkit;
 
@@ -93,6 +94,12 @@ impl CommunityCore {
                 let request_hash = self.hash_request(&request)?;
                 self.mutate(&principal.id, request, request_hash, Vec::new())
                     .await
+            }
+            (PrincipalRole::App, "document.list") => {
+                self.list_documents(&principal.id, decode(params)?).await
+            }
+            (PrincipalRole::App, "document.changes") => {
+                self.document_changes(&principal.id, decode(params)?).await
             }
             (PrincipalRole::App, "document.get") => self.get(&principal.id, decode(params)?).await,
             (PrincipalRole::App, "fact.assert") => {
@@ -218,7 +225,9 @@ impl CommunityCore {
         let _guard = lock.lock().await;
         let updates = self.repository.load_document_updates(&key).await?;
         let state = self.documents.read_state(&updates, self.writer_peer_id)?;
-        Ok(json!({"document": key, "state": state, "update_count": updates.len()}))
+        Ok(
+            json!({"document": key, "state": state, "update_count": updates.len(), "revision": updates.len()}),
+        )
     }
 
     #[allow(clippy::too_many_lines)]
@@ -315,6 +324,7 @@ impl CommunityCore {
             document_id: key.document_id.clone(),
             idempotency_key: fact.idempotency_key.clone(),
             schema_version: fact.schema_version,
+            expected_revision: None,
             mutations: vec![
                 map_string("claim_id", fact.claim_id.clone()),
                 map_string("subject", fact.subject.clone()),
@@ -524,6 +534,13 @@ impl CommunityCore {
             return Ok(response);
         }
         let updates = self.repository.load_document_updates(&key).await?;
+        let revision = u64::try_from(updates.len())?;
+        if request
+            .expected_revision
+            .is_some_and(|expected| expected != revision)
+        {
+            bail!("document revision conflict; read the document and reconcile before retrying");
+        }
         let change =
             self.documents
                 .stage_mutations(&updates, self.writer_peer_id, &request.mutations)?;
@@ -554,9 +571,11 @@ impl CommunityCore {
             "status": "APPLIED",
             "durable": true,
             "state": change.state,
+            "revision": revision.checked_add(1).context("document revision exhausted")?,
         });
         self.repository
             .commit_local(LocalCommit {
+                expected_update_count: revision,
                 idempotency_app_id: caller_app_id.to_owned(),
                 record,
                 document: key,

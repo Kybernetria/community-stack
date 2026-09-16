@@ -545,8 +545,8 @@ pub(super) fn doctor(connection: &Connection) -> Result<Vec<DoctorCheck>> {
         "SELECT (SELECT count(*) FROM durable_outbox q LEFT JOIN operations o ON o.operation_hash=q.operation_hash WHERE o.operation_hash IS NULL)+(SELECT count(*) FROM transport_deliveries d LEFT JOIN operations o ON o.operation_hash=d.operation_hash WHERE o.operation_hash IS NULL)+(SELECT count(*) FROM application_acks a LEFT JOIN operations o ON o.operation_hash=a.operation_hash WHERE o.operation_hash IS NULL)",
         "SELECT 'orphan-reference' WHERE (SELECT count(*) FROM durable_outbox q LEFT JOIN operations o ON o.operation_hash=q.operation_hash WHERE o.operation_hash IS NULL)+(SELECT count(*) FROM transport_deliveries d LEFT JOIN operations o ON o.operation_hash=d.operation_hash WHERE o.operation_hash IS NULL)>0 LIMIT 1", true)?);
     checks.push(query_check(connection, "migration_state",
-        "SELECT CASE WHEN (SELECT count(*) FROM schema_migrations WHERE version IN (1,2,3,4,5))=5 AND (SELECT max(version) FROM schema_migrations)=5 AND (SELECT count(*) FROM schema_migrations WHERE checksum IS NULL OR length(checksum)!=64)=0 THEN 0 ELSE 1 END",
-        "SELECT 'unexpected-migration-state' WHERE (SELECT count(*) FROM schema_migrations WHERE version IN (1,2,3,4,5))!=5 OR (SELECT max(version) FROM schema_migrations)!=5 OR (SELECT count(*) FROM schema_migrations WHERE checksum IS NULL OR length(checksum)!=64)>0", false)?);
+        "SELECT CASE WHEN (SELECT count(*) FROM schema_migrations WHERE version IN (1,2,3,4,5,6))=6 AND (SELECT max(version) FROM schema_migrations)=6 AND (SELECT count(*) FROM schema_migrations WHERE checksum IS NULL OR length(checksum)!=64)=0 THEN 0 ELSE 1 END",
+        "SELECT 'unexpected-migration-state' WHERE (SELECT count(*) FROM schema_migrations WHERE version IN (1,2,3,4,5,6))!=6 OR (SELECT max(version) FROM schema_migrations)!=6 OR (SELECT count(*) FROM schema_migrations WHERE checksum IS NULL OR length(checksum)!=64)>0", false)?);
     Ok(checks)
 }
 

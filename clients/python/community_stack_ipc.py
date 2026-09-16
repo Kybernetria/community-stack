@@ -12,7 +12,10 @@ MAX_RESPONSE = 4 * 1024 * 1024
 
 
 class CoreProtocolError(RuntimeError):
-    pass
+    def __init__(self, message: str, *, code: str = "PROTOCOL_ERROR", retryable: bool = False):
+        super().__init__(message)
+        self.code = code
+        self.retryable = retryable
 
 
 @dataclass(frozen=True)
@@ -25,6 +28,7 @@ class CoreClient:
         request = json.dumps(
             {"v": 1, "id": request_id, "token": self.token, "method": method, "params": params},
             separators=(",", ":"),
+            allow_nan=False,
         ).encode("utf-8")
         if len(request) > 1024 * 1024:
             raise CoreProtocolError("request exceeds local IPC limit")
@@ -43,11 +47,21 @@ class CoreClient:
         except (OSError, ValueError, struct.error) as error:
             raise CoreProtocolError(f"local core is unavailable: {error}") from error
 
+        if not isinstance(response, dict):
+            raise CoreProtocolError("response must be a JSON object")
         if response.get("id") != request_id or response.get("v") != 1:
             raise CoreProtocolError("response correlation/version mismatch")
-        if not response.get("ok"):
+        if not isinstance(response.get("ok"), bool):
+            raise CoreProtocolError("response ok must be boolean")
+        if not response["ok"]:
             error = response.get("error", {})
-            raise CoreProtocolError(f"{error.get('code', 'UNKNOWN')}: {error.get('message', 'request failed')}")
+            if not isinstance(error, dict):
+                raise CoreProtocolError("response error must be an object")
+            code = error.get("code", "UNKNOWN")
+            raise CoreProtocolError(f"{code}: {error.get('message', 'request failed')}",
+                                    code=code, retryable=error.get("retryable") is True)
+        if "result" not in response:
+            raise CoreProtocolError("successful response is missing result")
         return response["result"]
 
     @staticmethod

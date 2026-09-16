@@ -21,6 +21,7 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked --all-targets
+      - run: python3 scripts/smoke-workspace.py --binary target/debug/community-stack
       - run: test -z "$(cargo tree -i sqlx 2>/dev/null)"
       - run: test "$(cargo tree -i libsqlite3-sys | grep -c '^libsqlite3-sys ')" -eq 1
 
@@ -35,5 +36,6 @@ jobs:
         with:
           node-version: "24"
       - run: python -m py_compile $(find clients examples rns-bridge -name '*.py' -type f -print)
+      - run: python -m unittest discover -s tests/python -v
       - run: node --check examples/fact-console/app.js
       - run: python -m pip download --require-hashes --no-deps -r rns-bridge/requirements.txt -d /tmp/wheels

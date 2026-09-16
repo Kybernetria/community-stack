@@ -171,7 +171,7 @@ fn version_three_database_adds_profile_tables_without_rewriting_operations() {
             row.get(0)
         })
         .unwrap();
-    assert_eq!(versions, 5);
+    assert_eq!(versions, 6);
     let planning_tables: i64 = upgraded
         .query_row(
             "SELECT count(*) FROM sqlite_master WHERE type='table' AND name LIKE 'planning_%'",

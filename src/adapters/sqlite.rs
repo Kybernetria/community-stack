@@ -1,5 +1,10 @@
+mod documents;
+mod migrations;
+use migrations::apply_migrations;
 mod facts;
 mod planning;
+mod recovery;
+pub use recovery::{backup_database, verify_backup_database, visit_backup_updates};
 mod toolkit;
 
 use std::{
@@ -48,6 +53,16 @@ enum Request {
         key: String,
         request_hash: [u8; 32],
         reply: Reply<Option<Value>>,
+    },
+    ListDocuments {
+        app_id: String,
+        request: crate::domain::ListDocuments,
+        reply: Reply<crate::domain::DocumentPage>,
+    },
+    DocumentChanges {
+        app_id: String,
+        request: crate::domain::DocumentChanges,
+        reply: Reply<crate::domain::DocumentChangesPage>,
     },
     LoadUpdates {
         key: DocumentKey,
@@ -218,6 +233,33 @@ impl PrincipalRepository for StoreHandle {
 
 #[async_trait]
 impl DocumentRepository for StoreHandle {
+    async fn list_documents(
+        &self,
+        app_id: &str,
+        request: &crate::domain::ListDocuments,
+    ) -> Result<crate::domain::DocumentPage> {
+        let (tx, rx) = mpsc::sync_channel(1);
+        self.sender.send(Request::ListDocuments {
+            app_id: app_id.to_owned(),
+            request: request.clone(),
+            reply: tx,
+        })?;
+        receive(rx).await
+    }
+    async fn document_changes(
+        &self,
+        app_id: &str,
+        request: &crate::domain::DocumentChanges,
+    ) -> Result<crate::domain::DocumentChangesPage> {
+        let (tx, rx) = mpsc::sync_channel(1);
+        self.sender.send(Request::DocumentChanges {
+            app_id: app_id.to_owned(),
+            request: request.clone(),
+            reply: tx,
+        })?;
+        receive(rx).await
+    }
+
     async fn idempotency(
         &self,
         app_id: &str,
@@ -558,6 +600,16 @@ fn dispatch(connection: &mut Connection, request: Request) {
             request_hash,
             reply,
         } => respond(reply, idempotency(connection, &app_id, &key, &request_hash)),
+        Request::ListDocuments {
+            app_id,
+            request,
+            reply,
+        } => respond(reply, documents::list(connection, &app_id, &request)),
+        Request::DocumentChanges {
+            app_id,
+            request,
+            reply,
+        } => respond(reply, documents::changes(connection, &app_id, &request)),
         Request::LoadUpdates { key, reply } => respond(reply, load_updates(connection, &key)),
         Request::LogHead {
             author,
@@ -764,150 +816,6 @@ fn set_wal_with_retry(connection: &Connection) -> Result<()> {
     unreachable!()
 }
 
-fn apply_migrations(connection: &mut Connection) -> Result<()> {
-    const MIGRATIONS: &[(i64, &str)] = &[
-        (1, include_str!("../../migrations/0001_core.sql")),
-        (2, include_str!("../../migrations/0002_toolkit.sql")),
-        (3, include_str!("../../migrations/0003_fact_governance.sql")),
-        (
-            4,
-            include_str!("../../migrations/0004_planning_profile.sql"),
-        ),
-        (
-            5,
-            include_str!("../../migrations/0005_authorization_and_invariants.sql"),
-        ),
-    ];
-    const DIGESTS: [&str; 5] = [
-        "9bbdbdb32bfa205624db23724fb13b10c1ba0c8b19b549c66153b8b683c2b2c0",
-        "a07e36958351e4633e8fe978cd213a11d97417512c4b1e139d1f415ad0fb0bb5",
-        "c6a1ff0c8368f95a301a6e2ca1048d0cdedac55c462463b0331521df3b189cd6",
-        "6d7d7893d1836c94fbfdd3720d88bfb0fc7cb987131963e304248feabfa5a3f1",
-        "241a9e34078d5a60998c15dc99cce9f35048c059a5a6e44714ca898415126963",
-    ];
-    for ((version, sql), expected) in MIGRATIONS.iter().zip(DIGESTS) {
-        if blake3::hash(sql.as_bytes()).to_hex().as_str() != expected {
-            bail!("embedded migration {version} does not match its reviewed digest");
-        }
-    }
-
-    let migration_table_exists: bool = connection.query_row(
-        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations')",
-        [],
-        |row| row.get(0),
-    )?;
-    if migration_table_exists {
-        let newest: Option<i64> =
-            connection.query_row("SELECT max(version) FROM schema_migrations", [], |row| {
-                row.get(0)
-            })?;
-        if newest.is_some_and(|version| version > 5) {
-            bail!("database was created by a newer unsupported migration version");
-        }
-    }
-
-    for (version, sql) in MIGRATIONS {
-        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let table_exists: bool = tx.query_row(
-            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations')",
-            [],
-            |row| row.get(0),
-        )?;
-        let applied = table_exists
-            && tx.query_row(
-                "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version=?1)",
-                [version],
-                |row| row.get(0),
-            )?;
-        if !applied {
-            if *version == 4 {
-                preflight_v4_upgrade(&tx)?;
-            } else if *version == 5 {
-                preflight_v5_upgrade(&tx)?;
-            }
-            tx.execute_batch(sql)?;
-            tx.execute(
-                "INSERT INTO schema_migrations(version,applied_at_ms) VALUES(?1,?2)",
-                params![version, now_ms()?],
-            )?;
-            if *version == 5 {
-                for ((known_version, _), digest) in MIGRATIONS.iter().zip(DIGESTS) {
-                    tx.execute(
-                        "UPDATE schema_migrations SET checksum=?1 WHERE version=?2",
-                        params![digest, known_version],
-                    )?;
-                }
-            }
-        }
-        tx.commit()?;
-    }
-
-    let count: i64 = connection.query_row("SELECT count(*) FROM schema_migrations", [], |row| {
-        row.get(0)
-    })?;
-    if count != i64::try_from(MIGRATIONS.len())? {
-        bail!("database migration set is incomplete or unsupported");
-    }
-    for ((version, _), expected) in MIGRATIONS.iter().zip(DIGESTS) {
-        let stored: Option<String> = connection.query_row(
-            "SELECT checksum FROM schema_migrations WHERE version=?1",
-            [version],
-            |row| row.get(0),
-        )?;
-        if stored.as_deref() != Some(expected) {
-            bail!("database migration checksum mismatch at version {version}");
-        }
-    }
-    Ok(())
-}
-
-fn preflight_v4_upgrade(tx: &rusqlite::Transaction<'_>) -> Result<()> {
-    let collision: bool = tx.query_row(
-        "SELECT EXISTS(SELECT 1 FROM applications WHERE app_id=?1 AND enabled=1) OR EXISTS(SELECT 1 FROM administrators WHERE principal_id=?1 AND enabled=1)",
-        [crate::domain::PLANNING_NAMESPACE],
-        |row| row.get(0),
-    )?;
-    if collision {
-        bail!(
-            "legacy principal uses reserved namespace community.planning; disable or rename it with the previous release before upgrading"
-        );
-    }
-    Ok(())
-}
-
-fn preflight_v5_upgrade(tx: &rusqlite::Transaction<'_>) -> Result<()> {
-    for table in [
-        "applications",
-        "administrators",
-        "operations",
-        "document_updates",
-        "toolkit_concepts",
-        "fact_claim_revisions",
-        "planning_projects",
-        "profile_grants",
-    ] {
-        let exists: bool = tx.query_row(
-            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1)",
-            [table],
-            |row| row.get(0),
-        )?;
-        if !exists {
-            bail!("legacy migration state is missing required table {table}");
-        }
-    }
-    let ambiguous: bool = tx.query_row(
-        "SELECT EXISTS(SELECT 1 FROM applications a JOIN administrators d ON a.app_id=d.principal_id OR a.token_hash=d.token_hash)",
-        [],
-        |row| row.get(0),
-    )?;
-    if ambiguous {
-        bail!(
-            "legacy APP/ADMIN credentials are ambiguous; remove or rotate the duplicate while running the previous release, then retry"
-        );
-    }
-    Ok(())
-}
-
 fn authenticate(connection: &Connection, token_hash: &[u8; 32]) -> Result<Option<Principal>> {
     let row: Option<(String, String)> = connection
         .query_row(
@@ -1021,6 +929,12 @@ fn commit_local(connection: &mut Connection, commit: LocalCommit) -> Result<()> 
     }
     let sequence = i64::from(record.sequence);
     let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let update_count: i64 = tx.query_row(
+        "SELECT count(*) FROM document_updates WHERE app_id=?1 AND community_id=?2 AND document_id=?3 AND applied=1",
+        params![commit.document.app_id, commit.document.community_id, commit.document.document_id], |row| row.get(0))?;
+    if u64::try_from(update_count)? != commit.expected_update_count {
+        bail!("document state changed before commit");
+    }
     let current = log_head(&tx, &record.author_key, &record.log_id)?;
     match (record.sequence, current) {
         (0, None) => {}

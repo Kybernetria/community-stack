@@ -475,6 +475,10 @@ fn migration_artifact_digests_are_pinned() {
             include_bytes!("../migrations/0005_authorization_and_invariants.sql").as_slice(),
             "241a9e34078d5a60998c15dc99cce9f35048c059a5a6e44714ca898415126963",
         ),
+        (
+            include_bytes!("../migrations/0006_document_changes.sql").as_slice(),
+            "2ab18adf93cdfb8aefb10c23aca0af0ab1972d3372d4695757c25e3f84d53dc8",
+        ),
     ] {
         assert_eq!(blake3::hash(bytes).to_hex().as_str(), expected);
     }
@@ -499,7 +503,7 @@ fn concurrent_initializers_apply_each_migration_once() {
         handle.join().unwrap().unwrap();
     }
     let connection = Connection::open(db.as_ref()).unwrap();
-    assert_eq!(count(&connection, "schema_migrations"), 5);
+    assert_eq!(count(&connection, "schema_migrations"), 6);
     let checksums: i64 = connection
         .query_row(
             "SELECT count(*) FROM schema_migrations WHERE length(checksum)=64",
@@ -507,7 +511,7 @@ fn concurrent_initializers_apply_each_migration_once() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(checksums, 5);
+    assert_eq!(checksums, 6);
 }
 
 #[test]
@@ -632,7 +636,7 @@ fn version_one_database_upgrades_once_without_data_loss() {
     assert_eq!(count(&upgraded, "document_updates"), 1);
     assert_eq!(count(&upgraded, "fact_claims"), 1);
     assert_eq!(count(&upgraded, "fact_claim_revisions"), 1);
-    assert_eq!(count(&upgraded, "schema_migrations"), 5);
+    assert_eq!(count(&upgraded, "schema_migrations"), 6);
     let preserved: (Vec<u8>, Vec<u8>, Vec<u8>) = upgraded
         .query_row(
             "SELECT o.canonical_header,o.body_ciphertext,d.update_bytes FROM operations o JOIN document_updates d USING(operation_hash)",

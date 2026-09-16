@@ -433,7 +433,11 @@ impl CommunityCore {
         }))
     }
 
-    async fn require_profile_read(&self, app_id: &str, community_id: &str) -> Result<()> {
+    pub(super) async fn require_profile_read(
+        &self,
+        app_id: &str,
+        community_id: &str,
+    ) -> Result<()> {
         if !self
             .repository
             .profile_access(app_id, PLANNING_PROFILE_ID, community_id)
@@ -488,6 +492,7 @@ impl CommunityCore {
                 document_id,
                 idempotency_key,
                 schema_version: PLANNING_PROFILE_VERSION,
+                expected_revision: None,
                 mutations: vec![
                     planning_map("canonical_json", canonical_json),
                     planning_map("profile_id", PLANNING_PROFILE_ID.into()),

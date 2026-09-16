@@ -460,6 +460,7 @@ fn toolkit_mutation<T: Serialize>(
         document_id,
         idempotency_key,
         schema_version: TOOLKIT_SCHEMA_VERSION,
+        expected_revision: None,
         mutations: vec![Mutation::MapSet {
             container: "record".into(),
             key: "canonical_json".into(),

@@ -232,6 +232,8 @@ fn classify_error(message: &str) -> (&'static str, bool) {
         || message.contains("database is locked")
     {
         ("CONFLICT", true)
+    } else if message.contains("document revision conflict") {
+        ("REVISION_CONFLICT", false)
     } else if message.contains("cardinality_conflict") {
         ("CONFLICT", false)
     } else if message.contains("idempotency key was already used") {

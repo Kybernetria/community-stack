@@ -17,6 +17,7 @@ use crate::domain::{
 };
 
 pub struct LocalCommit {
+    pub expected_update_count: u64,
     pub idempotency_app_id: String,
     pub record: CanonicalRecord,
     pub document: DocumentKey,
@@ -35,6 +36,16 @@ pub trait PrincipalRepository: Send + Sync {
 
 #[async_trait]
 pub trait DocumentRepository: Send + Sync {
+    async fn list_documents(
+        &self,
+        app_id: &str,
+        request: &crate::domain::ListDocuments,
+    ) -> Result<crate::domain::DocumentPage>;
+    async fn document_changes(
+        &self,
+        app_id: &str,
+        request: &crate::domain::DocumentChanges,
+    ) -> Result<crate::domain::DocumentChangesPage>;
     async fn idempotency(
         &self,
         app_id: &str,
