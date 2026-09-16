@@ -114,6 +114,13 @@ COMMUNITY_APP_TOKEN='<app token>' COMMUNITY_ADMIN_TOKEN='<separate admin token>'
 
 The browser never receives the APP or ADMIN token. The gateway keeps the capabilities separate, requires a fresh per-process browser session secret on every RPC, and uses strict method allowlists; the ADMIN panel is unavailable without a separate ADMIN token. It consumes only the versioned Unix-socket API and imports no backend code or database schema. Do not expose this development gateway on a network interface.
 
+## Community workspace frontend
+
+[Community Hub](examples/community-hub/README.md) is a dependency-free, loopback-only
+browser workspace for revision-aware notes, tables with CSV export, paged activity,
+and optional shared planning. It uses only the versioned Unix-socket API and keeps
+APP credentials in the Python gateway. Its README includes setup and verification.
+
 ## Reticulum sidecar baseline
 
 ```bash

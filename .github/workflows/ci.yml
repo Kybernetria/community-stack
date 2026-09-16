@@ -38,4 +38,5 @@ jobs:
       - run: python -m py_compile $(find clients examples rns-bridge -name '*.py' -type f -print)
       - run: python -m unittest discover -s tests/python -v
       - run: node --check examples/fact-console/app.js
+      - run: node --check examples/community-hub/app.js
       - run: python -m pip download --require-hashes --no-deps -r rns-bridge/requirements.txt -d /tmp/wheels
