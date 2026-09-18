@@ -139,6 +139,29 @@ fn read_secret(path: &Path, expected_length: usize) -> Result<Vec<u8>> {
     Ok(bytes)
 }
 
+pub fn lock_data_dir(data_dir: &Path) -> Result<std::fs::File> {
+    std::fs::create_dir_all(data_dir)?;
+    if data_dir.join(crate::recovery::INCOMPLETE).exists() {
+        bail!("data directory recovery is incomplete");
+    }
+    let path = data_dir.join("core.lock");
+    if let Ok(metadata) = std::fs::symlink_metadata(&path)
+        && !metadata.file_type().is_file()
+    {
+        bail!("data directory lock must be a regular file");
+    }
+    let lock = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .mode(0o600)
+        .open(path)?;
+    lock.try_lock()
+        .context("data directory is already in use; stop its core before offline administration")?;
+    Ok(lock)
+}
+
 #[cfg(test)]
 mod tests {
     use std::os::unix::fs::PermissionsExt;
@@ -179,27 +202,4 @@ mod tests {
             write_token_file(&parent_link.join("capability"), "00".repeat(32).as_str()).is_err()
         );
     }
-}
-
-pub fn lock_data_dir(data_dir: &Path) -> Result<std::fs::File> {
-    std::fs::create_dir_all(data_dir)?;
-    if data_dir.join(crate::recovery::INCOMPLETE).exists() {
-        bail!("data directory recovery is incomplete");
-    }
-    let path = data_dir.join("core.lock");
-    if let Ok(metadata) = std::fs::symlink_metadata(&path)
-        && !metadata.file_type().is_file()
-    {
-        bail!("data directory lock must be a regular file");
-    }
-    let lock = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .truncate(false)
-        .mode(0o600)
-        .open(path)?;
-    lock.try_lock()
-        .context("data directory is already in use; stop its core before offline administration")?;
-    Ok(lock)
 }
