@@ -257,7 +257,13 @@ async fn dispatch(core: &CommunityCore, request: ApiRequest) -> ApiResponse {
                     core.call_authenticated(&principal, &request.method, request.params)
                         .await
                 }
-                Ok(None) | Err(_) => Err(protocol_error(
+                Ok(None) => Err(protocol_error(
+                    ApiErrorCode::Unauthenticated,
+                    "authentication failed",
+                    false,
+                )),
+                Err(error) => Err(typed_error_with_cause(
+                    error,
                     ApiErrorCode::Unauthenticated,
                     "authentication failed",
                     false,
@@ -270,6 +276,15 @@ async fn dispatch(core: &CommunityCore, request: ApiRequest) -> ApiResponse {
         Ok(value) => ApiResponse::success(id, value),
         Err(error) => response_for_error(id, error),
     }
+}
+
+fn typed_error_with_cause(
+    cause: anyhow::Error,
+    code: ApiErrorCode,
+    message: &'static str,
+    retryable: bool,
+) -> anyhow::Error {
+    anyhow::Error::new(ApiError::new(code, message, retryable)).context(cause)
 }
 
 fn response_for_error(id: String, error: anyhow::Error) -> ApiResponse {
