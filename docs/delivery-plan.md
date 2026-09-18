@@ -20,7 +20,7 @@ Exit work:
 
 - crash/failpoint matrix at every SQLite statement/commit boundary;
 - property tests for idempotency and log-head compare-and-swap;
-- encrypted full snapshots and replay-cost policy;
+- implement and externally review the proposed encrypted backup format in [`adr/0007-encrypted-backup-design.md`](adr/0007-encrypted-backup-design.md), including encrypted full snapshots and replay-cost policy;
 - online backup/restore command and corruption drills;
 - enable fact projection rebuild only after canonical operation replay into staging, deterministic validation, atomic replacement, interruption tests, and redacted repair audit are complete;
 - additional native profiles only after planning-profile conformance experience; avoid a universal validator/projector interface until extension, mapping, and profile-authority rules are proven;

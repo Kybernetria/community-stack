@@ -152,6 +152,8 @@ Run `scripts/check-boundaries.sh` to reject infrastructure leakage into domain/u
 - [`docs/adr/0004-native-toolkit-module.md`](docs/adr/0004-native-toolkit-module.md)
 - [`docs/adr/0005-fact-governance-and-inspectability.md`](docs/adr/0005-fact-governance-and-inspectability.md)
 - [`docs/adr/0006-native-interoperability-profiles.md`](docs/adr/0006-native-interoperability-profiles.md)
+- [`docs/adr/0007-encrypted-backup-design.md`](docs/adr/0007-encrypted-backup-design.md) — proposed v2 backup design
+- [`docs/dependency-security.md`](docs/dependency-security.md)
 - [`protocol/profiles/community-planning-v1.md`](protocol/profiles/community-planning-v1.md)
 - [`protocol/reticulum-sync.md`](protocol/reticulum-sync.md)
 
@@ -164,7 +166,7 @@ Run `scripts/check-boundaries.sh` to reject infrastructure leakage into domain/u
 - Existing pre-migration facts remain `legacy/untyped` and queryable; new assertions require an enabled registered schema.
 - Planning profile grants are device-local and community-scoped, but do not provide replicated group authorization. The v1 recurrence model is bounded rather than full RFC 5545, IANA-style zone names are syntax-checked without a pinned TZDB, and no CalDAV adapter exists yet.
 - Toolkit validation/projection is a deliberately narrow native module seam, not a universal plug-in interface. Other application-defined validators still need a versioned module contract, especially for scarce-resource invariants.
-- Toolkit import is not implemented. Recovery is canonical operation replay plus community-stack online backup; an export cannot bypass review policy by being restored directly.
+- Toolkit import is not implemented. Recovery is canonical operation replay plus community-stack online backup; an export cannot bypass review policy by being restored directly. Current v1 device backups are plaintext at rest; the versioned encrypted-backup design is proposed in [`docs/adr/0007-encrypted-backup-design.md`](docs/adr/0007-encrypted-backup-design.md) and is not yet implemented.
 - The Reticulum custom license must be reviewed for the intended distribution model.
 
 Do not use this initial slice for payments, scarce inventory, safety-critical data, or high-risk confidential communications.
