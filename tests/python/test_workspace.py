@@ -48,6 +48,26 @@ class WorkspaceTests(unittest.TestCase):
             "cells": {'["r1","a"]': "seed, green", '["r1","b"]': 2, '["r2","a"]': "soil"}})
         self.assertEqual(table_csv(doc), 'Item,Count\r\n"seed, green",2\r\nsoil,\r\n')
 
+    def test_csv_formula_like_text_is_neutralized_but_numbers_stay_typed(self):
+        doc = Document("garden", "sheet", 2, {"meta": {"kind": "table"},
+            "columns": {"a": " =heading", "b": "Number"}, "rows": {"r": True},
+            "cells": {
+                '["r","a"]': "  =SUM(A1:A2)",
+                '["r","b"]': -42,
+            }})
+        self.assertEqual(table_csv(doc), "' =heading,Number\r\n'  =SUM(A1:A2),-42\r\n")
+        self.assertEqual(doc.state["cells"]['["r","a"]'], "  =SUM(A1:A2)")
+
+    def test_csv_formula_markers_cover_all_supported_prefixes(self):
+        doc = Document("garden", "sheet", 2, {"meta": {"kind": "table"},
+            "columns": {"a": "Label"}, "rows": {"r": True},
+            "cells": {
+                '["r","a"]': "@cmd",
+            }})
+        for marker in ("=", "+", "-", "@"):
+            doc.state["cells"]['["r","a"]'] = marker + "1"
+            self.assertTrue(table_csv(doc).startswith("Label\r\n'" + marker))
+
     def test_cross_community_snapshot_is_rejected(self):
         with self.assertRaises(ValueError):
             self.workspace.mutate(Document("private", "doc", 1, {}), [], command_id="bad")

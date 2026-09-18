@@ -102,16 +102,27 @@ class Workspace:
 
 
 def table_csv(document: Document) -> str:
-    """Lossy deterministic export, not backup; formula-looking strings remain literal."""
+    """Lossy deterministic export, not backup; neutralize formula-like strings."""
     _table(document)
     columns = sorted(document.state.get("columns", {}))
     output = io.StringIO(newline="")
     writer = csv.writer(output)
-    writer.writerow([document.state["columns"][column] for column in columns])
+    writer.writerow([_csv_string(document.state["columns"][column]) for column in columns])
     cells = document.state.get("cells", {})
     for row in sorted(document.state.get("rows", {})):
-        writer.writerow([cells.get(_cell(row, column), "") for column in columns])
+        values = []
+        for column in columns:
+            value = cells.get(_cell(row, column), "")
+            values.append(_csv_string(value) if type(value) is str else value)
+        writer.writerow(values)
     return output.getvalue()
+
+
+def _csv_string(value: str) -> str:
+    """Keep text literal when a spreadsheet recognizes a formula prefix."""
+    if value.lstrip().startswith(("=", "+", "-", "@")):
+        return "'" + value
+    return value
 
 
 def _table(document: Document) -> None:
