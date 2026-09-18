@@ -16,7 +16,10 @@ use tokio::{
 };
 use tracing::{info, warn};
 
-use crate::application::CommunityCore;
+use crate::{
+    application::{CommunityCore, protocol_error},
+    domain::{ApiError, ApiErrorCode},
+};
 
 const API_VERSION: u16 = 1;
 const MAX_REQUEST_BYTES: usize = 1_048_576;
@@ -153,9 +156,12 @@ async fn handle_connection(mut stream: UnixStream, core: CommunityCore) -> Resul
             .context("local API connection timed out reading a frame")??;
         let response = match serde_json::from_slice::<ApiRequest>(&bytes) {
             Ok(request) => dispatch(&core, request).await,
-            Err(error) => {
-                ApiResponse::failure(String::new(), "INVALID_JSON", error.to_string(), false)
-            }
+            Err(_) => ApiResponse::failure(
+                String::new(),
+                ApiErrorCode::InvalidJson.as_str(),
+                "request body is not valid JSON",
+                false,
+            ),
         };
         let encoded = serde_json::to_vec(&response)?;
         if encoded.len() > MAX_RESPONSE_BYTES {
@@ -179,14 +185,14 @@ async fn dispatch(core: &CommunityCore, request: ApiRequest) -> ApiResponse {
         return ApiResponse::failure(
             id,
             "UNSUPPORTED_VERSION",
-            format!("API version {} is not supported", request.v),
+            "request uses an unsupported API version",
             false,
         );
     }
     if id.is_empty() || id.len() > 128 {
         return ApiResponse::failure(
             id,
-            "INVALID_REQUEST_ID",
+            ApiErrorCode::InvalidRequest.as_str(),
             "request id must contain 1..=128 bytes",
             false,
         );
@@ -199,50 +205,104 @@ async fn dispatch(core: &CommunityCore, request: ApiRequest) -> ApiResponse {
         })
     } else {
         match request.token.as_deref() {
-            None => Err(anyhow::anyhow!("authentication token is required")),
+            None => Err(protocol_error(
+                ApiErrorCode::Unauthenticated,
+                "authentication failed",
+                false,
+            )),
             Some(token) => match core.authenticate(token).await {
                 Ok(Some(principal)) => {
                     core.call_authenticated(&principal, &request.method, request.params)
                         .await
                 }
-                Ok(None) => Err(anyhow::anyhow!("authentication failed")),
-                Err(error) => Err(error),
+                Ok(None) | Err(_) => Err(protocol_error(
+                    ApiErrorCode::Unauthenticated,
+                    "authentication failed",
+                    false,
+                )),
             },
         }
     };
 
     match result {
         Ok(value) => ApiResponse::success(id, value),
-        Err(error) => {
-            let message = error.to_string();
-            let (code, retryable) = classify_error(&message);
-            ApiResponse::failure(id, code, message, retryable)
-        }
+        Err(error) => response_for_error(id, error),
     }
 }
 
-fn classify_error(message: &str) -> (&'static str, bool) {
-    if message.contains("authentication") {
-        ("UNAUTHENTICATED", false)
-    } else if message.contains("not allowed") || message.contains("not granted") {
-        ("FORBIDDEN", false)
-    } else if message.contains("log head changed")
-        || message.contains("state changed before commit")
-        || message.contains("current revision changed before commit")
-        || message.contains("database is locked")
-    {
-        ("CONFLICT", true)
-    } else if message.contains("document revision conflict") {
-        ("REVISION_CONFLICT", false)
-    } else if message.contains("cardinality_conflict") {
-        ("CONFLICT", false)
-    } else if message.contains("idempotency key was already used") {
-        ("IDEMPOTENCY_CONFLICT", false)
-    } else if message.contains("unknown public method")
-        || message.contains("method is unknown or not allowed")
-    {
-        ("METHOD_NOT_FOUND", false)
-    } else {
-        ("INVALID_REQUEST", false)
+fn response_for_error(id: String, error: anyhow::Error) -> ApiResponse {
+    let (code, message, retryable) = error.downcast_ref::<ApiError>().map_or(
+        (
+            ApiErrorCode::InvalidRequest,
+            "request could not be processed",
+            false,
+        ),
+        |error| (error.code(), error.message(), error.retryable()),
+    );
+    // Deliberately log only the stable classification. The anyhow chain remains
+    // available to an attached debugger without putting request data or secrets
+    // in normal service logs.
+    warn!(code = code.as_str(), retryable, "local API request failed");
+    ApiResponse::failure(id, code.as_str(), message, retryable)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ApiResponse, response_for_error};
+    use crate::domain::{ApiError, ApiErrorCode};
+
+    #[test]
+    fn errors_use_the_typed_safe_boundary() {
+        let secret = "private plaintext, token=0123456789abcdef";
+        let error = anyhow::Error::new(ApiError::new(
+            ApiErrorCode::IdempotencyConflict,
+            "idempotency key was already used for a different request",
+            false,
+        ))
+        .context(secret);
+        let response = response_for_error("request-1".into(), error);
+        let encoded = serde_json::to_string(&response).unwrap();
+        assert!(encoded.contains("IDEMPOTENCY_CONFLICT"));
+        assert!(encoded.contains("idempotency key was already used"));
+        assert!(!encoded.contains(secret));
+        assert!(!encoded.contains("private plaintext"));
+    }
+
+    #[test]
+    fn untyped_internal_errors_are_redacted_without_string_classification() {
+        let response = response_for_error(
+            "request-2".into(),
+            anyhow::anyhow!("SQL statement contained bearer-secret-should-not-leak"),
+        );
+        let encoded = serde_json::to_string(&response).unwrap();
+        assert!(encoded.contains("INVALID_REQUEST"));
+        assert!(encoded.contains("request could not be processed"));
+        assert!(!encoded.contains("bearer-secret-should-not-leak"));
+    }
+
+    #[test]
+    fn typed_response_keeps_v1_shape() {
+        let response = response_for_error(
+            "request-3".into(),
+            anyhow::Error::new(ApiError::new(
+                ApiErrorCode::Conflict,
+                "request conflicts with current state; retry if appropriate",
+                true,
+            )),
+        );
+        let ApiResponse {
+            v,
+            id,
+            ok,
+            error,
+            result,
+        } = response;
+        assert_eq!(v, 1);
+        assert_eq!(id, "request-3");
+        assert!(!ok);
+        assert!(result.is_none());
+        let error = error.unwrap();
+        assert_eq!(error.code, "CONFLICT");
+        assert!(error.retryable);
     }
 }

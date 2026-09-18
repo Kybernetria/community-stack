@@ -4,6 +4,7 @@
 //! runtimes, transports, or any adapter implementation.
 
 pub mod documents;
+pub mod error;
 pub mod facts;
 pub mod planning;
 pub mod profiles;
@@ -12,6 +13,7 @@ pub mod security;
 pub mod toolkit;
 
 pub use documents::*;
+pub use error::*;
 pub use facts::*;
 pub use planning::*;
 pub use profiles::*;

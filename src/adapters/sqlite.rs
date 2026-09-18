@@ -21,11 +21,11 @@ use serde_json::{Value, json};
 
 use crate::{
     domain::{
-        AckOutbox, DeliveryAck, DoctorCheck, DocumentKey, DocumentReplayInput, FactClaim,
-        FactCurrentRevision, FactHistoryPage, FactHistoryRequest, FactInspection, FactSchema,
-        GetFactSchema, InspectFact, ListFactSchemas, LogHead, OutboxItem, PlanningCatalog,
-        Principal, PrincipalRole, ProfileAccess, ProjectionCheck, ProjectionWrite, QueryFacts,
-        RegisterFactSchema, ToolkitCatalog, ToolkitConcept,
+        AckOutbox, ApiError, ApiErrorCode, DeliveryAck, DoctorCheck, DocumentKey,
+        DocumentReplayInput, FactClaim, FactCurrentRevision, FactHistoryPage, FactHistoryRequest,
+        FactInspection, FactSchema, GetFactSchema, InspectFact, ListFactSchemas, LogHead,
+        OutboxItem, PlanningCatalog, Principal, PrincipalRole, ProfileAccess, ProjectionCheck,
+        ProjectionWrite, QueryFacts, RegisterFactSchema, ToolkitCatalog, ToolkitConcept,
     },
     ports::{
         DocumentRepository, FactInspectionRepository, FactRepository, FactSchemaRepository,
@@ -876,7 +876,11 @@ fn idempotency(
         return Ok(None);
     };
     if stored_hash.as_slice() != request_hash {
-        bail!("idempotency key was already used for a different request");
+        return Err(anyhow::Error::new(ApiError::new(
+            ApiErrorCode::IdempotencyConflict,
+            "idempotency key was already used for a different request",
+            false,
+        )));
     }
     Ok(Some(
         serde_json::from_slice(&response).context("stored idempotency response is corrupt")?,
@@ -933,16 +937,32 @@ fn commit_local(connection: &mut Connection, commit: LocalCommit) -> Result<()> 
         "SELECT count(*) FROM document_updates WHERE app_id=?1 AND community_id=?2 AND document_id=?3 AND applied=1",
         params![commit.document.app_id, commit.document.community_id, commit.document.document_id], |row| row.get(0))?;
     if u64::try_from(update_count)? != commit.expected_update_count {
-        bail!("document state changed before commit");
+        return Err(anyhow::Error::new(ApiError::new(
+            ApiErrorCode::Conflict,
+            "document state changed before commit",
+            true,
+        )));
     }
     let current = log_head(&tx, &record.author_key, &record.log_id)?;
     match (record.sequence, current) {
         (0, None) => {}
-        (0, Some(_)) => bail!("log head changed before commit"),
+        (0, Some(_)) => {
+            return Err(anyhow::Error::new(ApiError::new(
+                ApiErrorCode::Conflict,
+                "log head changed before commit",
+                true,
+            )));
+        }
         (sequence, Some(head))
             if head.sequence.checked_add(1) == Some(sequence)
                 && Some(head.operation_hash) == record.backlink => {}
-        _ => bail!("log head changed before commit"),
+        _ => {
+            return Err(anyhow::Error::new(ApiError::new(
+                ApiErrorCode::Conflict,
+                "log head changed before commit",
+                true,
+            )));
+        }
     }
 
     tx.execute(
@@ -1027,7 +1047,11 @@ fn apply_projection(
                 .transpose()
                 .context("invalid expected previous revision hash")?;
             if stored_previous_hash != expected_previous.as_deref() {
-                bail!("fact current revision changed before commit");
+                return Err(anyhow::Error::new(ApiError::new(
+                    ApiErrorCode::Conflict,
+                    "fact current revision changed before commit",
+                    true,
+                )));
             }
             if lifecycle_status == crate::domain::FactLifecycleStatus::Asserted
                 && !multiple_active_claims

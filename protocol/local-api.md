@@ -2,7 +2,9 @@
 
 ## Framing
 
-Each request and response is one frame: `u32 big-endian length || JSON bytes`. Connections may carry multiple sequential requests. Requests are limited to 1 MiB and responses to 4 MiB. A malformed frame closes the connection.
+Each request and response is one frame: `u32 big-endian length || JSON bytes`. Connections may carry multiple sequential requests. Requests are limited to 1 MiB and responses to 4 MiB. A malformed frame closes the connection. Malformed JSON inside a bounded frame
+returns `INVALID_JSON` with a redacted message; frame-length and I/O failures
+close the connection without echoing parser or transport details.
 
 Request envelope:
 
@@ -21,6 +23,23 @@ or:
 ```json
 {"v":1,"id":"caller-unique-id","ok":false,"error":{"code":"INVALID_REQUEST","message":"redacted-safe detail","retryable":false}}
 ```
+
+The error object is a typed boundary, not a serialization of an internal
+error string. `code` is stable machine-readable vocabulary, `message` is an
+explicitly safe client message, and `retryable` is the server's bounded retry
+hint. Internal causes remain server-side only. The v1 codes are:
+
+- `UNAUTHENTICATED`
+- `FORBIDDEN`
+- `CONFLICT`
+- `REVISION_CONFLICT`
+- `IDEMPOTENCY_CONFLICT`
+- `METHOD_NOT_FOUND`
+- `INVALID_REQUEST`
+- `INVALID_JSON`
+
+Unexpected internal failures use the safe `INVALID_REQUEST` boundary for v1
+compatibility; clients must not treat its message as diagnostic detail.
 
 `health` does not require a token. Every other call does. Applications must generate a fresh, durable idempotency key for each intended write and reuse it after timeout/disconnection.
 

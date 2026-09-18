@@ -5,14 +5,18 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use super::{CommunityCore, validate_idempotency_key, validate_object_id};
-use crate::domain::{
-    DocumentKey, EventTiming, GetProfile, GrantProfile, Mutation, PLANNING_NAMESPACE,
-    PLANNING_PROFILE_DIGEST, PLANNING_PROFILE_ID, PLANNING_PROFILE_VERSION, PlanningCatalog,
-    PlanningDependency, PlanningDependencyRecord, PlanningEvent, PlanningEventRecord,
-    PlanningProject, PlanningProjectRecord, PlanningProjection, PlanningProjectionWrite,
-    PlanningTask, PlanningTaskRecord, PlanningViewRequest, PrimitiveValue, PrincipalRole,
-    ProfileAccess, ProfileDescription, ProfileManifest, ProjectionWrite, PutDependency, PutEvent,
-    PutProject, PutTask, RecurrenceFrequency, RecurrenceRule,
+use crate::{
+    application::protocol_error,
+    domain::{
+        ApiErrorCode, DocumentKey, EventTiming, GetProfile, GrantProfile, Mutation,
+        PLANNING_NAMESPACE, PLANNING_PROFILE_DIGEST, PLANNING_PROFILE_ID, PLANNING_PROFILE_VERSION,
+        PlanningCatalog, PlanningDependency, PlanningDependencyRecord, PlanningEvent,
+        PlanningEventRecord, PlanningProject, PlanningProjectRecord, PlanningProjection,
+        PlanningProjectionWrite, PlanningTask, PlanningTaskRecord, PlanningViewRequest,
+        PrimitiveValue, PrincipalRole, ProfileAccess, ProfileDescription, ProfileManifest,
+        ProjectionWrite, PutDependency, PutEvent, PutProject, PutTask, RecurrenceFrequency,
+        RecurrenceRule,
+    },
 };
 
 const MAX_PROFILE_ROWS: u16 = 10_001;
@@ -444,7 +448,11 @@ impl CommunityCore {
             .await?
             .can_read
         {
-            bail!("application is not granted read access to community.planning");
+            return Err(protocol_error(
+                ApiErrorCode::Forbidden,
+                "application is not granted read access to community.planning",
+                false,
+            ));
         }
         Ok(())
     }
@@ -455,7 +463,11 @@ impl CommunityCore {
             .profile_access(app_id, PLANNING_PROFILE_ID, community_id)
             .await?;
         if !access.can_read || !access.can_write {
-            bail!("application is not granted write access to community.planning");
+            return Err(protocol_error(
+                ApiErrorCode::Forbidden,
+                "application is not granted write access to community.planning",
+                false,
+            ));
         }
         Ok(())
     }

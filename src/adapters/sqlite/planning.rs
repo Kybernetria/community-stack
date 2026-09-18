@@ -2,8 +2,9 @@ use anyhow::Result;
 use rusqlite::{Connection, OptionalExtension, Transaction, params, types::Type};
 
 use crate::domain::{
-    DependencyKind, PlanningCatalog, PlanningDependency, PlanningEvent, PlanningProject,
-    PlanningProjection, PlanningProjectionWrite, PlanningStatus, PlanningTask, ProfileAccess,
+    ApiError, ApiErrorCode, DependencyKind, PlanningCatalog, PlanningDependency, PlanningEvent,
+    PlanningProject, PlanningProjection, PlanningProjectionWrite, PlanningStatus, PlanningTask,
+    ProfileAccess,
 };
 
 use super::now_ms;
@@ -75,7 +76,11 @@ pub(super) fn apply_projection(
         |row| row.get(0),
     )?;
     if !authorized {
-        anyhow::bail!("planning profile grant was revoked before commit");
+        return Err(anyhow::Error::new(ApiError::new(
+            ApiErrorCode::Conflict,
+            "planning profile grant was revoked before commit",
+            true,
+        )));
     }
     let expected_version = i64::try_from(expected_community_version)?;
     let current_version = tx
@@ -87,7 +92,11 @@ pub(super) fn apply_projection(
         .optional()?
         .unwrap_or(0);
     if current_version != expected_version {
-        anyhow::bail!("planning state changed before commit");
+        return Err(anyhow::Error::new(ApiError::new(
+            ApiErrorCode::Conflict,
+            "planning state changed before commit",
+            true,
+        )));
     }
     tx.execute(
         "INSERT INTO planning_community_versions(namespace_id,community_id,version) VALUES(?1,?2,1) \

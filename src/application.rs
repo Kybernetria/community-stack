@@ -19,11 +19,11 @@ use tokio::sync::Mutex;
 
 use crate::{
     domain::{
-        AckOutbox, AssertFact, CheckStatus, ClaimOutbox, DoctorCheck, DoctorReport, DocumentKey,
-        FactLifecycleStatus, FactRevisionProjection, FactSchema, ForgeDocumentUpdate, GetDocument,
-        GetFactSchema, InspectFact, ListFactSchemas, MAX_FACT_OBJECT_BYTES, MutateDocument,
-        Mutation, PrimitiveValue, Principal, PrincipalRole, ProjectionWrite, ProvenancePolicy,
-        QueryFacts, RegisterFactSchema,
+        AckOutbox, ApiError, ApiErrorCode, AssertFact, CheckStatus, ClaimOutbox, DoctorCheck,
+        DoctorReport, DocumentKey, FactLifecycleStatus, FactRevisionProjection, FactSchema,
+        ForgeDocumentUpdate, GetDocument, GetFactSchema, InspectFact, ListFactSchemas,
+        MAX_FACT_OBJECT_BYTES, MutateDocument, Mutation, PrimitiveValue, Principal, PrincipalRole,
+        ProjectionWrite, ProvenancePolicy, QueryFacts, RegisterFactSchema,
     },
     ports::{ContentHasher, DocumentEngine, LocalCommit, Repository, SecureLog},
 };
@@ -73,7 +73,11 @@ impl CommunityCore {
                 health["author_key"] = json!(hex::encode(self.secure_log.author_key()));
                 Ok(health)
             }
-            _ => bail!("unknown public method"),
+            _ => Err(protocol_error(
+                ApiErrorCode::MethodNotFound,
+                "method is not available",
+                false,
+            )),
         }
     }
 
@@ -86,7 +90,11 @@ impl CommunityCore {
     ) -> Result<Value> {
         if principal.role == PrincipalRole::App && principal.id == crate::domain::PLANNING_NAMESPACE
         {
-            bail!("APP principal uses a reserved code-owned data namespace");
+            return Err(protocol_error(
+                ApiErrorCode::InvalidRequest,
+                "APP principal uses a reserved code-owned data namespace",
+                false,
+            ));
         }
         match (&principal.role, method) {
             (PrincipalRole::App, "document.mutate") => {
@@ -209,7 +217,16 @@ impl CommunityCore {
                 self.repository.ack_outbox(&request).await?;
                 Ok(json!({"durable": true}))
             }
-            _ => bail!("method is unknown or not allowed for this principal"),
+            _ if known_method(method) => Err(protocol_error(
+                ApiErrorCode::Forbidden,
+                "method is unknown or not allowed for this principal",
+                false,
+            )),
+            _ => Err(protocol_error(
+                ApiErrorCode::MethodNotFound,
+                "method is not available",
+                false,
+            )),
         }
     }
 
@@ -539,7 +556,11 @@ impl CommunityCore {
             .expected_revision
             .is_some_and(|expected| expected != revision)
         {
-            bail!("document revision conflict; read the document and reconcile before retrying");
+            return Err(protocol_error(
+                ApiErrorCode::RevisionConflict,
+                "document revision conflict; read the document and reconcile before retrying",
+                false,
+            ));
         }
         let change =
             self.documents
@@ -602,6 +623,54 @@ impl CommunityCore {
         locks.insert(id, Arc::downgrade(&lock));
         lock
     }
+}
+
+pub(crate) fn protocol_error(
+    code: ApiErrorCode,
+    message: &'static str,
+    retryable: bool,
+) -> anyhow::Error {
+    anyhow::Error::new(ApiError::new(code, message, retryable))
+}
+
+fn known_method(method: &str) -> bool {
+    matches!(
+        method,
+        "document.mutate"
+            | "document.list"
+            | "document.changes"
+            | "document.get"
+            | "fact.assert"
+            | "fact.query"
+            | "fact.inspect"
+            | "fact.history"
+            | "profile.list"
+            | "profile.get"
+            | "planning.project.put"
+            | "planning.task.put"
+            | "planning.event.put"
+            | "planning.dependency.put"
+            | "planning.calendar.list"
+            | "planning.gantt.get"
+            | "profile.grant"
+            | "schema.register"
+            | "schema.get"
+            | "schema.list"
+            | "system.doctor"
+            | "projection.check"
+            | "projection.rebuild"
+            | "toolkit.schema.list"
+            | "toolkit.schema.show"
+            | "toolkit.schema.add"
+            | "toolkit.tool.add"
+            | "toolkit.assert"
+            | "toolkit.verify"
+            | "toolkit.query"
+            | "toolkit.explain"
+            | "toolkit.export"
+            | "outbox.claim"
+            | "outbox.ack"
+    )
 }
 
 fn map_string(key: &str, value: String) -> Mutation {

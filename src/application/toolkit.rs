@@ -5,14 +5,17 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use super::{CommunityCore, validate_idempotency_key, validate_object_id};
-use crate::domain::{
-    AddConcept, AddTool, AssertToolkitValue, AssertionOrigin, Cardinality, ConceptDefinition,
-    ConceptKind, DocumentKey, ExplainToolkit, ExportToolkit, ListConcepts, Mutation,
-    PrimitiveValue, ProjectionWrite, QueryOperator, QueryToolkit, RequirementExplanation,
-    RequirementState, ShowConcept, ToolkitAssertion, ToolkitCatalog, ToolkitConcept,
-    ToolkitProjection, ToolkitQueryPlan, ToolkitQueryResponse, ToolkitQueryResult,
-    ToolkitRequirement, ToolkitReview, ToolkitTool, ValueType, VerificationState,
-    VerifyToolkitAssertion,
+use crate::{
+    application::protocol_error,
+    domain::{
+        AddConcept, AddTool, ApiErrorCode, AssertToolkitValue, AssertionOrigin, Cardinality,
+        ConceptDefinition, ConceptKind, DocumentKey, ExplainToolkit, ExportToolkit, ListConcepts,
+        Mutation, PrimitiveValue, ProjectionWrite, QueryOperator, QueryToolkit,
+        RequirementExplanation, RequirementState, ShowConcept, ToolkitAssertion, ToolkitCatalog,
+        ToolkitConcept, ToolkitProjection, ToolkitQueryPlan, ToolkitQueryResponse,
+        ToolkitQueryResult, ToolkitRequirement, ToolkitReview, ToolkitTool, ValueType,
+        VerificationState, VerifyToolkitAssertion,
+    },
 };
 
 const TOOLKIT_SCHEMA_VERSION: u32 = 1;
@@ -733,7 +736,11 @@ fn reject_local_cardinality_conflict(
             && Some(assertion.assertion_id.as_str()) != except_assertion
             && assertion.value.as_ref() != value
     }) {
-        bail!("cardinality_conflict: a different verified value is already visible");
+        return Err(protocol_error(
+            ApiErrorCode::Conflict,
+            "a different verified value is already visible",
+            false,
+        ));
     }
     Ok(())
 }
