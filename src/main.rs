@@ -122,12 +122,20 @@ async fn main() -> Result<()> {
             let _ownership = config::lock_data_dir(&data_dir)?;
             config::initialize_data_dir(&data_dir)?;
             let (token_hash, token) = config::generate_token()?;
-            sqlite::register_application(
+            if let Some(path) = &token_file {
+                config::write_token_file(path, &token)?;
+            }
+            if let Err(error) = sqlite::register_application(
                 &config::database_path(&data_dir),
                 &id,
                 &token_hash,
                 role.database_name(),
-            )?;
+            ) {
+                if let Some(path) = &token_file {
+                    let _ = std::fs::remove_file(path);
+                }
+                return Err(error);
+            }
             println!("principal={id}");
             println!("role={}", role.database_name());
             if let Some(path) = token_file {

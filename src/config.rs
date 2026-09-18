@@ -49,11 +49,7 @@ pub fn write_token_file(path: &Path, token: &str) -> Result<()> {
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
-    let parent_metadata = std::fs::symlink_metadata(parent)
-        .with_context(|| format!("reading token-file parent {}", parent.display()))?;
-    if parent_metadata.file_type().is_symlink() || !parent_metadata.is_dir() {
-        bail!("token-file parent must be a real directory");
-    }
+    validate_real_directory(parent)?;
     if path.file_name().is_none() {
         bail!("token-file path must name a file");
     }
@@ -95,6 +91,31 @@ pub fn database_path(data_dir: &Path) -> PathBuf {
 }
 pub fn socket_path(data_dir: &Path) -> PathBuf {
     data_dir.join(SOCKET_FILE)
+}
+
+fn validate_real_directory(path: &Path) -> Result<()> {
+    let mut current = if path.is_absolute() {
+        PathBuf::from(std::path::MAIN_SEPARATOR.to_string())
+    } else {
+        std::env::current_dir()?
+    };
+    for component in path.components() {
+        match component {
+            std::path::Component::Prefix(_)
+            | std::path::Component::RootDir
+            | std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => {
+                current.pop();
+            }
+            std::path::Component::Normal(name) => current.push(name),
+        }
+        let metadata = std::fs::symlink_metadata(&current)
+            .with_context(|| format!("reading token-file parent {}", current.display()))?;
+        if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            bail!("token-file parent must be a real directory");
+        }
+    }
+    Ok(())
 }
 
 fn ensure_secret(path: &Path, length: usize) -> Result<()> {
@@ -200,6 +221,18 @@ mod tests {
         std::os::unix::fs::symlink(&real_parent, &parent_link).unwrap();
         assert!(
             write_token_file(&parent_link.join("capability"), "00".repeat(32).as_str()).is_err()
+        );
+
+        let nested = temp.path().join("nested");
+        std::fs::create_dir(&nested).unwrap();
+        let nested_link = nested.join("link");
+        std::os::unix::fs::symlink(&real_parent, &nested_link).unwrap();
+        assert!(
+            write_token_file(
+                &nested_link.join("child/capability"),
+                "00".repeat(32).as_str()
+            )
+            .is_err()
         );
     }
 }
