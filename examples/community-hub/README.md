@@ -9,10 +9,13 @@ Run these commands from the repository root on a Unix-like system. Install Rust 
 ```sh
 cargo build --locked
 ./target/debug/community-stack init --data-dir ./data
-./target/debug/community-stack register --data-dir ./data --id org.example.community-hub --role app
+./target/debug/community-stack register --data-dir ./data --id org.example.community-hub --role app \
+  --token-file ./data/community-hub.capability
 ```
 
-Registration prints the APP token once. Store it securely. Run `init` and `register` only with the core stopped. Do not reinitialize existing data. The APP identity owns its document namespace: use the same APP token to reopen the same workspace.
+`--token-file` is recommended: it creates a new mode `0600` file without printing
+this bearer capability. The legacy registration form still prints the APP token
+once for compatibility. Store capabilities securely. Run `init` and `register` only with the core stopped. Do not reinitialize existing data. The APP identity owns its document namespace: use the same APP token to reopen the same workspace.
 
 Start the core in one terminal:
 

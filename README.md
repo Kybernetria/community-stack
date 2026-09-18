@@ -30,13 +30,13 @@ This repository implements the **Phase 1 local durable vertical slice**, plus co
 ```bash
 cargo build --locked
 cargo run -- init --data-dir ./data
-cargo run -- register --data-dir ./data --id org.example.wiki --role app
-cargo run -- register --data-dir ./data --id device-admin --role admin
-cargo run -- register --data-dir ./data --id reticulum --role transport
+cargo run -- register --data-dir ./data --id org.example.wiki --role app --token-file ./data/wiki.capability
+cargo run -- register --data-dir ./data --id device-admin --role admin --token-file ./data/admin.capability
+cargo run -- register --data-dir ./data --id reticulum --role transport --token-file ./data/reticulum.capability
 RUST_LOG=community_stack=info cargo run -- serve --data-dir ./data
 ```
 
-Run `init` and `register` only while `serve` is stopped. Registration prints a bearer token once; store it in the calling application's OS keyring, not source control or command history.
+Run `init` and `register` only while `serve` is stopped. `register --token-file PATH` is the recommended issuance path: it atomically creates a new mode `0600` file, refuses existing or symlink targets, syncs the token, and does not print the bearer value. The legacy command without `--token-file` still prints a token once for compatibility; store it in an OS keyring, not source control or command history.
 
 The API socket defaults to `./data/community.sock`. Frames are:
 

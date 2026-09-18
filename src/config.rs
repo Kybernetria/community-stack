@@ -44,6 +44,52 @@ pub fn generate_token() -> Result<([u8; 32], String)> {
     Ok((*blake3::hash(&token).as_bytes(), hex::encode(token)))
 }
 
+pub fn write_token_file(path: &Path, token: &str) -> Result<()> {
+    let parent = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let parent_metadata = std::fs::symlink_metadata(parent)
+        .with_context(|| format!("reading token-file parent {}", parent.display()))?;
+    if parent_metadata.file_type().is_symlink() || !parent_metadata.is_dir() {
+        bail!("token-file parent must be a real directory");
+    }
+    if path.file_name().is_none() {
+        bail!("token-file path must name a file");
+    }
+    if std::fs::symlink_metadata(path).is_ok() {
+        bail!("refusing to overwrite existing token-file destination");
+    }
+
+    let mut random = [0_u8; 8];
+    getrandom::fill(&mut random)
+        .map_err(|error| anyhow::anyhow!("OS random source failed: {error}"))?;
+    let temp_path = parent.join(format!(
+        ".{}.tmp-{}",
+        path.file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("token"),
+        hex::encode(random)
+    ));
+    let mut file = OpenOptions::new();
+    file.write(true).create_new(true).mode(0o600);
+    let mut temporary = file
+        .open(&temp_path)
+        .context("creating private token-file staging entry")?;
+    temporary.write_all(token.as_bytes())?;
+    temporary.sync_all()?;
+    drop(temporary);
+
+    let result = (|| {
+        std::fs::hard_link(&temp_path, path)
+            .context("atomically installing token-file destination")?;
+        std::fs::File::open(parent)?.sync_all()?;
+        Ok::<(), anyhow::Error>(())
+    })();
+    let _ = std::fs::remove_file(&temp_path);
+    result
+}
+
 pub fn database_path(data_dir: &Path) -> PathBuf {
     data_dir.join(DB_FILE)
 }
@@ -91,6 +137,48 @@ fn read_secret(path: &Path, expected_length: usize) -> Result<Vec<u8>> {
         bail!("secret path {} has invalid length", path.display());
     }
     Ok(bytes)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::os::unix::fs::PermissionsExt;
+
+    use tempfile::TempDir;
+
+    use super::write_token_file;
+
+    #[test]
+    fn token_file_is_private_and_exclusive() {
+        let temp = TempDir::new().unwrap();
+        let path = temp.path().join("capability");
+        write_token_file(&path, "00".repeat(32).as_str()).unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "00".repeat(32));
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        let error = write_token_file(&path, "11".repeat(32).as_str()).unwrap_err();
+        assert!(!error.to_string().contains(&"11".repeat(32)));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "00".repeat(32));
+    }
+
+    #[test]
+    fn token_file_rejects_symlink_targets_and_parents() {
+        let temp = TempDir::new().unwrap();
+        let target = temp.path().join("target");
+        std::fs::write(&target, b"do not replace").unwrap();
+        let link = temp.path().join("link");
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+        assert!(write_token_file(&link, "00".repeat(32).as_str()).is_err());
+
+        let real_parent = temp.path().join("real");
+        std::fs::create_dir(&real_parent).unwrap();
+        let parent_link = temp.path().join("parent-link");
+        std::os::unix::fs::symlink(&real_parent, &parent_link).unwrap();
+        assert!(
+            write_token_file(&parent_link.join("capability"), "00".repeat(32).as_str()).is_err()
+        );
+    }
 }
 
 pub fn lock_data_dir(data_dir: &Path) -> Result<std::fs::File> {

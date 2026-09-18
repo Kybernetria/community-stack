@@ -42,6 +42,9 @@ enum Command {
         id: String,
         #[arg(long, value_enum)]
         role: Role,
+        /// Write the capability to a new private file instead of stdout.
+        #[arg(long)]
+        token_file: Option<PathBuf>,
     },
     /// Create a complete device backup; destination must not exist.
     Backup {
@@ -110,7 +113,12 @@ async fn main() -> Result<()> {
                 data_dir.display()
             );
         }
-        Command::Register { data_dir, id, role } => {
+        Command::Register {
+            data_dir,
+            id,
+            role,
+            token_file,
+        } => {
             let _ownership = config::lock_data_dir(&data_dir)?;
             config::initialize_data_dir(&data_dir)?;
             let (token_hash, token) = config::generate_token()?;
@@ -122,8 +130,16 @@ async fn main() -> Result<()> {
             )?;
             println!("principal={id}");
             println!("role={}", role.database_name());
-            println!("token={token}");
-            eprintln!("Store this token securely; registering the same id again rotates it.");
+            if let Some(path) = token_file {
+                config::write_token_file(&path, &token)?;
+                println!("token_file={}", path.display());
+                eprintln!(
+                    "Capability written to a new private token file; registering the same id again rotates it."
+                );
+            } else {
+                println!("token={token}");
+                eprintln!("Store this token securely; registering the same id again rotates it.");
+            }
         }
         Command::Backup {
             data_dir,
