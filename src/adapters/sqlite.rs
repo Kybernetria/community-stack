@@ -576,12 +576,21 @@ impl SystemRepository for StoreHandle {
     }
 }
 
-async fn receive<T: Send + 'static>(receiver: mpsc::Receiver<Result<T, String>>) -> Result<T> {
-    tokio::task::spawn_blocking(move || receiver.recv())
-        .await
-        .context("SQLite response task panicked")?
-        .context("SQLite writer stopped")?
-        .map_err(anyhow::Error::msg)
+async fn receive<T>(receiver: mpsc::Receiver<Result<T, String>>) -> Result<T> {
+    loop {
+        match receiver.try_recv() {
+            Ok(result) => return result.map_err(anyhow::Error::msg),
+            Err(mpsc::TryRecvError::Empty) => {
+                // Polling keeps this await cancellation-safe. A blocking
+                // receive in spawn_blocking would outlive an aborted API task
+                // during bounded shutdown.
+                tokio::time::sleep(Duration::from_millis(1)).await;
+            }
+            Err(mpsc::TryRecvError::Disconnected) => {
+                return Err(anyhow::anyhow!("SQLite writer stopped"));
+            }
+        }
+    }
 }
 
 #[allow(clippy::too_many_lines)]
