@@ -12,6 +12,7 @@ use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{UnixListener, UnixStream},
     sync::Semaphore,
+    task::JoinSet,
     time::{Duration, timeout},
 };
 use tracing::{info, warn};
@@ -26,6 +27,7 @@ const MAX_REQUEST_BYTES: usize = 1_048_576;
 const MAX_RESPONSE_BYTES: usize = 4_194_304;
 const MAX_REQUESTS_PER_CONNECTION: usize = 256;
 const IO_TIMEOUT: Duration = Duration::from_secs(30);
+const SHUTDOWN_GRACE: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Deserialize)]
 struct ApiRequest {
@@ -94,9 +96,16 @@ pub async fn serve(socket_path: &Path, core: CommunityCore) -> Result<()> {
     std::fs::set_permissions(socket_path, std::fs::Permissions::from_mode(0o600))?;
     info!(path = %socket_path.display(), "local API ready");
     let connections = Arc::new(Semaphore::new(128));
+    let mut tasks = JoinSet::new();
 
     loop {
         tokio::select! {
+            biased;
+            signal = tokio::signal::ctrl_c() => {
+                signal?;
+                info!("shutdown requested; stopping new local API connections");
+                break;
+            }
             accepted = listener.accept() => {
                 let (stream, _) = accepted?;
                 let Ok(permit) = Arc::clone(&connections).try_acquire_owned() else {
@@ -105,23 +114,50 @@ pub async fn serve(socket_path: &Path, core: CommunityCore) -> Result<()> {
                     continue;
                 };
                 let core = core.clone();
-                tokio::spawn(async move {
+                tasks.spawn(async move {
                     let _permit = permit;
-                    if let Err(error) = handle_connection(stream, core).await {
-                        warn!(error = %error, "local API connection closed with an error");
+                    if handle_connection(stream, core).await.is_err() {
+                        warn!("local API connection closed with an error");
                     }
                 });
             }
-            signal = tokio::signal::ctrl_c() => {
-                signal?;
-                info!("shutdown requested");
-                break;
+            joined = tasks.join_next(), if !tasks.is_empty() => {
+                if joined.is_some_and(|result| result.is_err()) {
+                    warn!("local API connection task terminated unexpectedly");
+                }
             }
         }
     }
+    // Dropping the listener stops accepts before we wait for handlers. A
+    // request that already committed can therefore finish writing its response
+    // during the grace period, while a stalled client cannot block shutdown.
     drop(listener);
+    drain_connections(&mut tasks).await;
+    drop(tasks);
     let _ = std::fs::remove_file(socket_path);
     Ok(())
+}
+
+async fn drain_connections(tasks: &mut JoinSet<()>) {
+    drain_connections_with_grace(tasks, SHUTDOWN_GRACE).await;
+}
+
+async fn drain_connections_with_grace(tasks: &mut JoinSet<()>, grace: Duration) {
+    let drain = async {
+        while let Some(result) = tasks.join_next().await {
+            if result.is_err() {
+                warn!("local API connection task terminated during shutdown");
+            }
+        }
+    };
+    if tokio::time::timeout(grace, drain).await.is_err() {
+        warn!("local API shutdown grace period expired; aborting stalled connections");
+        tasks.abort_all();
+        let _ = tokio::time::timeout(Duration::from_secs(1), async {
+            while tasks.join_next().await.is_some() {}
+        })
+        .await;
+    }
 }
 
 fn prepare_socket(path: &Path) -> Result<()> {
@@ -248,7 +284,9 @@ fn response_for_error(id: String, error: anyhow::Error) -> ApiResponse {
 
 #[cfg(test)]
 mod tests {
-    use super::{ApiResponse, response_for_error};
+    use tokio::{task::JoinSet, time::Duration};
+
+    use super::{ApiResponse, drain_connections_with_grace, response_for_error};
     use crate::domain::{ApiError, ApiErrorCode};
 
     #[test]
@@ -304,5 +342,23 @@ mod tests {
         let error = error.unwrap();
         assert_eq!(error.code, "CONFLICT");
         assert!(error.retryable);
+    }
+
+    #[tokio::test]
+    async fn shutdown_drain_allows_active_handler_to_finish() {
+        let mut tasks = JoinSet::new();
+        tasks.spawn(async {
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        });
+        drain_connections_with_grace(&mut tasks, Duration::from_secs(1)).await;
+        assert!(tasks.is_empty());
+    }
+
+    #[tokio::test]
+    async fn shutdown_drain_aborts_a_stalled_handler() {
+        let mut tasks = JoinSet::new();
+        tasks.spawn(async { std::future::pending::<()>().await });
+        drain_connections_with_grace(&mut tasks, Duration::from_millis(5)).await;
+        assert!(tasks.is_empty());
     }
 }
