@@ -4,7 +4,7 @@ A dependency-free development workspace for Community Stack: notes/wiki, sparse 
 
 ## Start from a fresh checkout
 
-Run these commands from the repository root on a Unix-like system. Install Rust through rustup; the repository's `rust-toolchain.toml` selects the pinned toolchain.
+Run these commands from the repository root on a supported Linux system. Install Rust through rustup; the repository's `rust-toolchain.toml` selects the pinned toolchain.
 
 ```sh
 cargo build --locked

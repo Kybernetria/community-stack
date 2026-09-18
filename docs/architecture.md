@@ -179,7 +179,7 @@ Transport receipt, Reticulum Resource completion, and p2panda sync `Done` are ne
 
 ## API entrypoint and isolation
 
-The Unix socket is the only frontend/adapter entrypoint in Phase 1:
+The Linux Unix socket is the only frontend/adapter entrypoint in Phase 1:
 
 - mode `0600` and no TCP listener;
 - 32-byte random bearer capabilities stored only as BLAKE3 hashes;
@@ -192,7 +192,7 @@ The Unix socket is the only frontend/adapter entrypoint in Phase 1:
 - secrets and payloads are excluded from logs;
 - the optional loopback development gateway requires a fresh per-process browser session secret in addition to strict Host/Origin checks, and never sends APP/ADMIN tokens to the browser.
 
-For multi-user appliances, split app and transport sockets by Unix group and add OS peer-credential checks. For sandboxed mobile applications, expose the same contract through platform IPC/FFI; do not open loopback TCP by default.
+For multi-user appliances, split app and transport sockets by Unix group and add OS peer-credential checks. For sandboxed mobile applications, expose the same contract through a separately reviewed platform IPC/FFI adapter; do not run the Linux daemon through loopback TCP by default. See [`platform-support.md`](platform-support.md).
 
 ## SQLite ownership
 

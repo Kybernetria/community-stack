@@ -38,7 +38,7 @@ RUST_LOG=community_stack=info cargo run -- serve --data-dir ./data
 
 Run `init` and `register` only while `serve` is stopped. `register --token-file PATH` is the recommended issuance path: it atomically creates a new mode `0600` file, refuses existing or symlink targets, syncs the token, and does not print the bearer value. The legacy command without `--token-file` still prints a token once for compatibility; store it in an OS keyring, not source control or command history.
 
-The API socket defaults to `./data/community.sock`. Frames are:
+The supported native core platform is Linux. The API socket defaults to `./data/community.sock`; other Unix-like platforms are not currently supported because equivalent socket/filesystem security has not been reviewed. Frames are:
 
 ```text
 4-byte unsigned big-endian JSON byte length | UTF-8 JSON
@@ -145,6 +145,7 @@ domain ← ports ← application ← adapters ← main
 Run `scripts/check-boundaries.sh` to reject infrastructure leakage into domain/use-case code.
 
 - [`docs/architecture.md`](docs/architecture.md) — component plumbing, trust boundaries, and flows
+- [`docs/platform-support.md`](docs/platform-support.md) — Linux support boundary and portability policy
 - [`docs/delivery-plan.md`](docs/delivery-plan.md) — gated path from this vertical slice to replicated production
 - [`docs/adr/0001-low-level-p2panda.md`](docs/adr/0001-low-level-p2panda.md)
 - [`docs/adr/0002-single-sqlite-authority.md`](docs/adr/0002-single-sqlite-authority.md)
