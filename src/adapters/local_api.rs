@@ -27,7 +27,8 @@ const MAX_REQUEST_BYTES: usize = 1_048_576;
 const MAX_RESPONSE_BYTES: usize = 4_194_304;
 const MAX_REQUESTS_PER_CONNECTION: usize = 256;
 const IO_TIMEOUT: Duration = Duration::from_secs(30);
-const SHUTDOWN_GRACE: Duration = Duration::from_secs(10);
+// Keep the drain bounded below the existing CLI/smoke-test wait budget.
+const SHUTDOWN_GRACE: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Deserialize)]
 struct ApiRequest {
@@ -97,11 +98,13 @@ pub async fn serve(socket_path: &Path, core: CommunityCore) -> Result<()> {
     info!(path = %socket_path.display(), "local API ready");
     let connections = Arc::new(Semaphore::new(128));
     let mut tasks = JoinSet::new();
+    let shutdown_signal = tokio::signal::ctrl_c();
+    tokio::pin!(shutdown_signal);
 
     loop {
         tokio::select! {
             biased;
-            signal = tokio::signal::ctrl_c() => {
+            signal = &mut shutdown_signal => {
                 signal?;
                 info!("shutdown requested; stopping new local API connections");
                 break;
