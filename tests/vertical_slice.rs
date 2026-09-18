@@ -61,6 +61,24 @@ async fn durable_write_is_idempotent_and_reaches_opaque_outbox() {
         .unwrap();
     assert_eq!(first, retry);
     assert_eq!(first["durable"], true);
+    let mut different = json!({
+        "community_id": "test-community",
+        "document_id": "welcome",
+        "idempotency_key": "command-1",
+        "schema_version": 1,
+        "mutations": [
+            {"op": "text_insert", "container": "body", "index": 0, "text": "different"}
+        ]
+    });
+    let conflict = core
+        .call_authenticated(&app, "document.mutate", different.take())
+        .await
+        .unwrap_err();
+    assert!(
+        conflict
+            .to_string()
+            .contains("idempotency key was already used")
+    );
 
     let document = core
         .call_authenticated(

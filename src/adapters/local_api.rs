@@ -160,6 +160,14 @@ async fn drain_connections_with_grace(tasks: &mut JoinSet<()>, grace: Duration) 
     }
 }
 
+fn validate_frame_length(length: u32) -> Result<usize> {
+    let length = usize::try_from(length)?;
+    if length == 0 || length > MAX_REQUEST_BYTES {
+        bail!("invalid request frame length");
+    }
+    Ok(length)
+}
+
 fn prepare_socket(path: &Path) -> Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -179,13 +187,11 @@ async fn handle_connection(mut stream: UnixStream, core: CommunityCore) -> Resul
             .await
             .context("local API connection timed out waiting for a frame")?;
         let length = match read_length {
-            Ok(length) => length as usize,
+            Ok(length) => length,
             Err(error) if error.kind() == ErrorKind::UnexpectedEof => return Ok(()),
             Err(error) => return Err(error.into()),
         };
-        if length == 0 || length > MAX_REQUEST_BYTES {
-            bail!("invalid request frame length {length}");
-        }
+        let length = validate_frame_length(length)?;
         let mut bytes = vec![0; length];
         timeout(IO_TIMEOUT, stream.read_exact(&mut bytes))
             .await
@@ -360,5 +366,16 @@ mod tests {
         tasks.spawn(async { std::future::pending::<()>().await });
         drain_connections_with_grace(&mut tasks, Duration::from_millis(5)).await;
         assert!(tasks.is_empty());
+    }
+
+    #[test]
+    fn frame_length_validation_is_bounded_for_malformed_lengths() {
+        for length in [0, 1, 1_048_576, 1_048_577, u32::MAX] {
+            let result = super::validate_frame_length(length);
+            assert_eq!(result.is_ok(), (1..=1_048_576).contains(&length));
+            if let Ok(length) = result {
+                assert!((1..=1_048_576).contains(&length));
+            }
+        }
     }
 }
