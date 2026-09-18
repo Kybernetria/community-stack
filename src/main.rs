@@ -139,7 +139,6 @@ async fn main() -> Result<()> {
             println!("principal={id}");
             println!("role={}", role.database_name());
             if let Some(path) = token_file {
-                config::write_token_file(&path, &token)?;
                 println!("token_file={}", path.display());
                 eprintln!(
                     "Capability written to a new private token file; registering the same id again rotates it."
