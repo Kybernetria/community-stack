@@ -45,15 +45,15 @@ The APP token stays in Python and never reaches browser code. `--token` is suppo
 
 ### Saves, disconnects, and conflicts
 
-Before a write, the browser saves its exact request, base snapshot, and a fresh UUID command ID in localStorage. Every retry rebuilds the same mutation and uses the same idempotency key; every IPC attempt gets a fresh request ID. Writes are blocked if browser storage fails. Only one unresolved command is allowed at a time. Use **Retry exact write** after restarting the core/gateway and reopening its printed URL at the same port. Browser storage is scoped to that origin; use the same port and browser profile to recover it.
+Before a write, the browser validates meaningful IDs/titles, UTF-8 byte limits, planning dates/progress/control characters, metadata primitives, and the serialized 256 KiB gateway limit. It then saves its exact request, base snapshot, and a fresh UUID command ID in localStorage. Every retry sends the stored v1 command unchanged; the gateway rebuilds the same mutation and uses the same idempotency key, while every IPC attempt gets a fresh request ID. Writes are blocked if browser storage fails. Only one unresolved command is allowed at a time. Use **Retry exact write** after restarting the core/gateway and reopening its printed URL at the same port. Browser storage is scoped to that origin; use the same port and browser profile to recover it.
 
-Successful writes clear the pending command. If the revision changed, the gateway reloads the latest document and returns HTTP 409. The editor displays that revision and a copyable unsaved draft. Review and manually reapply changes; the app never silently overwrites or automatically rebases them. Failed conflict reloads leave editing unavailable until a fresh document read. Discarding an ambiguous pending command does not undo a write that may already have committed: refresh before creating another.
+Successful writes clear the pending command. If the revision changed, the gateway reloads the latest document and returns HTTP 409. The editor displays that revision and a copyable unsaved draft. Review and manually reapply changes; the app never silently overwrites or automatically rebases them. Failed conflict reloads leave editing unavailable until a fresh document read. Conflict drafts remain copyable even if the pending command belongs to another community or document kind; the app never silently overwrites or automatically rebases them. Document and activity reads discard stale responses and deduplicate repeated pages. Discarding an ambiguous pending command does not undo a write that may already have committed: refresh before creating another.
 
 Pending payloads contain document content on this device, but no APP token. They remain until resolved or explicitly discarded. Protect the browser profile accordingly. In-memory drafts are not autosaved. Browsers may eventually evict localStorage; export/backup of authoritative core data remains a separate concern.
 
 ## Optional planning profile
 
-The Planning panel uses `planning.project.put`, `planning.task.put`, `planning.event.put`, `planning.calendar.list`, and `planning.gantt.get`. It creates projects, tasks with progress, and all-day events (exclusive end date), and displays the calendar and project/task views. It does not edit existing planning records, support recurrence, or display a timeline chart. Views are bounded to 100 records per collection by the gateway. Authorization or API availability errors remain local to the panel; notes and tables still work. No placeholder successful data is generated.
+The Planning panel uses `planning.project.put`, `planning.task.put`, `planning.event.put`, `planning.calendar.list`, and `planning.gantt.get`. It creates projects, tasks with progress, and all-day events (exclusive end date), and displays the calendar and project/task views. Descriptions are optional: leaving Description blank omits it from the core command; non-empty descriptions must be one line and at most 4,000 UTF-8 bytes. Dates, progress, statuses, IDs, and request size are checked before a pending write is stored. It does not edit existing planning records, support recurrence, or display a timeline chart. Views are bounded to 100 records per collection by the gateway. Authorization or API availability errors remain local to the panel; notes and tables still work. No placeholder successful data is generated.
 
 To grant access, stop the core and register a separate administrator if you do not already have one:
 
@@ -106,6 +106,8 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked --all-targets
 python -m unittest discover -s tests/python -v
 python -m py_compile $(find clients examples rns-bridge -name '*.py' -type f -print)
+node --check examples/community-hub/app.js
+git diff --check
 ```
 
 The gateway tests exercise real loopback HTTP requests with a fake IPC client: allowlisting, Host/Origin/session rejection, malformed and oversized bodies, safe errors, static-file restrictions, exact retries with fresh request IDs, input validation, and revision-conflict reloads. Existing Workspace/IPC tests remain intact. No test needs live credentials or writes to a real community.

@@ -134,9 +134,37 @@ class HubTests(unittest.TestCase):
         self.assertEqual(params["idempotency_key"], "plan-stable")
         self.assertEqual(params["task_id"], "task-1")
         self.assertIsNone(params["project_id"])
+        self.assertNotIn("description", params)
+        request["params"]["command_id"] = "plan-with-description"
+        request["params"]["description"] = "Keep this detail"
+        request["params"]["progress_percent"] = 21
+        self.assertEqual(self.request(request)[0], 200)
+        self.assertEqual(self.core.calls[-1][1]["description"], "Keep this detail")
         request["params"]["progress_percent"] = 101
         self.assertEqual(self.request(request)[0], 400)
-        self.assertEqual(len(self.core.calls), 1)
+        self.assertEqual(len(self.core.calls), 2)
+
+    def test_invalid_planning_values_do_not_reach_core(self):
+        base = {"community_id": "garden", "command_id": "plan-invalid", "record_id": "task-1",
+                "title": "Plant trees", "description": "", "status": "planned",
+                "project_id": "", "progress_percent": 20}
+        invalid = [
+            {"title": "   "}, {"title": "bad\nname"}, {"record_id": "bad\x01id"},
+            {"status": "unknown"}, {"status": []}, {"progress_percent": -1},
+            {"progress_percent": 101}, {"project_id": []}, {"description": "bad\x01description"},
+        ]
+        for change in invalid:
+            with self.subTest(change=change):
+                request = {"method": "planning.task.put", "params": {**base, **change}}
+                self.assertEqual(self.request(request)[0], 400)
+        for start, end in [("20250230", "2025-03-01"), ("2025-02-30", "2025-03-01"), ("2025-03-01", "2025-03-01"), ("2025-03-02", "2025-03-01")]:
+            request = {"method": "planning.event.put", "params": {
+                "community_id": "garden", "command_id": "event-invalid", "record_id": "event-1",
+                "title": "Meeting", "description": "", "status": "planned", "project_id": "",
+                "start_date": start, "end_date_exclusive": end}}
+            with self.subTest(start=start, end=end):
+                self.assertEqual(self.request(request)[0], 400)
+        self.assertFalse(self.core.calls)
 
     def test_table_creation_row_delete_and_csv(self):
         request = {"method": "table.create", "params": {"community_id": "g", "document_id": "table",

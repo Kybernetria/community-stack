@@ -32,8 +32,10 @@ def shape(value, required, optional=()):
         raise ValueError("Unexpected or missing fields")
 
 
-def text(value, maximum=256, empty=False):
-    if not isinstance(value, str) or (not empty and not value.strip()) or len(value.encode("utf-8")) > maximum or '\x00' in value:
+def text(value, maximum=256, empty=False, controls=True):
+    if (not isinstance(value, str) or (not empty and not value.strip())
+            or len(value.encode("utf-8")) > maximum or '\x00' in value
+            or (controls and any(ord(char) < 32 or 127 <= ord(char) <= 159 for char in value))):
         raise ValueError("Invalid text field or length")
     return value
 
@@ -52,6 +54,13 @@ def primitive(value):
     if type(value) is float and math.isfinite(value):
         return
     raise ValueError("Values must be finite JSON primitives")
+
+
+def iso_date(value):
+    value = text(value, 10)
+    if len(value) != 10 or value[4] != "-" or value[7] != "-":
+        raise ValueError("Invalid date")
+    return date.fromisoformat(value)
 
 
 class Capture:
@@ -84,21 +93,30 @@ def dispatch(core, request):
         if kind == "event":
             required |= {"project_id", "start_date", "end_date_exclusive"}
         shape(p, required)
+        description = text(p["description"], 4000, True)
+        status = text(p["status"], 32)
         payload = {"idempotency_key": text(p["command_id"], 64),
                    kind + "_id": text(p["record_id"]), "title": text(p["title"], 240),
-                   "description": text(p["description"], 4000, True), "status": p["status"]}
-        if p["status"] not in ("planned", "active", "completed", "cancelled", "archived"):
+                   "status": status}
+        # The core models description as an optional field and rejects Some("").
+        if description.strip():
+            payload["description"] = description
+        if status not in ("planned", "active", "completed", "cancelled", "archived"):
             raise ValueError("Invalid planning status")
         if kind != "project":
-            payload["project_id"] = text(p["project_id"]) if p["project_id"] else None
+            project_id = p["project_id"]
+            if project_id is None or (isinstance(project_id, str) and not project_id.strip()):
+                payload["project_id"] = None
+            else:
+                payload["project_id"] = text(project_id)
         if kind == "task":
             progress = integer(p["progress_percent"])
             if progress > 100:
                 raise ValueError("Progress must be 0–100")
             payload["progress_percent"] = progress
         if kind == "event":
-            start = date.fromisoformat(text(p["start_date"], 10))
-            end = date.fromisoformat(text(p["end_date_exclusive"], 10))
+            start = iso_date(p["start_date"])
+            end = iso_date(p["end_date_exclusive"])
             if end <= start:
                 raise ValueError("Event end must be after start")
             payload["timing"] = {"kind": "all_day", "start_date": start.isoformat(), "end_date_exclusive": end.isoformat()}
@@ -153,7 +171,7 @@ def dispatch(core, request):
                 if key in {"kind", "title"}:
                     raise ValueError("Title and kind have dedicated fields")
                 primitive(value)
-            builder.save_note(doc, text(p["title"], 240), text(p["body"], 100000, True), command_id=command)
+            builder.save_note(doc, text(p["title"], 240), text(p["body"], 100000, True, controls=False), command_id=command)
             mutations = capture.params["mutations"]
             for key in sorted(state.get("meta", {})):
                 if key not in {"kind", "title"} and key not in metadata:
